@@ -20,12 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Missing required environment variables' });
   }
 
-  
-
-  // if (Array.isArray(rcode)) {
-  //   code = rcode[0];
-  // }
-
   try {
     const tokenResponse = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
       method: 'POST',
