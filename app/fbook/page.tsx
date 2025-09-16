@@ -3,13 +3,13 @@
 'use client';
 
 import React from 'react';
-import YouTubeViewCount from '@/components/Youtube';
+import FacebookVideoList from '@/components/Facebook';
 
 const HomePage: React.FC = () => {
 
   return (
     <div>
-      <YouTubeViewCount />
+      <FacebookVideoList />
     </div>
   );
 };

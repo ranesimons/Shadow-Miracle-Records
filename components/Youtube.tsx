@@ -1,11 +1,11 @@
-// components/YouTubeViewCountsList.tsx
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
 
 type VideoView = {
+  title: string;
   videoId: string;
+  realVideoId: string;
   viewCount: string | null;
   error: string | null;
 };
@@ -20,8 +20,10 @@ type ApiError = {
 
 const YouTubeViewCount: React.FC = () => {
   const [videoViews, setVideoViews] = useState<VideoView[]>([]);
+  const [sortedVideoViews, setSortedVideoViews] = useState<VideoView[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     async function fetchViewCount() {
@@ -31,23 +33,17 @@ const YouTubeViewCount: React.FC = () => {
       try {
         const res = await fetch(`/api/youtube`);
         if (!res.ok) {
-          // Try to parse error
           const errBody: ApiError = await res.json();
-          console.log('$$$');
-          console.log(errBody);
-          console.log('$$$');
           throw new Error(errBody.error || `API error with status ${res.status}`);
         }
         const data: ApiResponse = await res.json();
         setVideoViews(data.viewCount);
+        setSortedVideoViews(data.viewCount);
       } catch (err: unknown) {
         if (err instanceof Error) {
-            // here err is Error, so you can access err.message etc
-            console.error(err.message);
-            setError(err.message);
+          setError(err.message);
         } else {
-            // err could be string, number, null, etc
-            console.error(String(err));
+          setError('An unknown error occurred');
         }
       } finally {
         setIsLoading(false);
@@ -57,26 +53,51 @@ const YouTubeViewCount: React.FC = () => {
     fetchViewCount();
   }, []);
 
+  const handleSort = () => {
+    const sorted = [...videoViews].sort((a, b) => {
+      const aViews = parseInt(a.viewCount || '0');
+      const bViews = parseInt(b.viewCount || '0');
+      return sortOrder === 'asc' ? aViews - bViews : bViews - aViews;
+    });
+    setSortedVideoViews(sorted);
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
   if (isLoading) {
-    return <div>Loading view count...</div>;
+    return <div className="loading">Loading view count...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="error">Error: {error}</div>;
   }
 
   return (
-    <div>
-      {videoViews.map((vv) => (
-        <div key={vv.videoId} style={{ marginBottom: '1rem' }}>
-          <strong>Video ID:</strong> {vv.videoId} <br />
-          {vv.error ? (
-            <span style={{ color: 'red' }}>Error: {vv.error}</span>
-          ) : (
-            <span>Views: {vv.viewCount}</span>
-          )}
-        </div>
-      ))}
+    <div className="container">
+      <button className="sort-button" onClick={handleSort}>
+        Sort by Views ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
+      </button>
+      <div className="video-list">
+        {sortedVideoViews.map((vv) => (
+          <div key={vv.videoId} className="video-item">
+            {vv.error ? (
+              <span className="error-message">Error: {vv.error}</span>
+            ) : (
+              <div className="video-details">
+                <span>Views: {vv.viewCount}</span>
+                <iframe
+                  className="video-iframe"
+                  width="315"
+                  height="560"
+                  src={`https://www.youtube.com/embed/${vv.realVideoId}`}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

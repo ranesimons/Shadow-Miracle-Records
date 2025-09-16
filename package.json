@@ -12,7 +12,10 @@
     "next": "15.5.2",
     "node-fetch": "^3.3.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-facebook-player": "^0.1.0",
+    "react-player": "^3.3.2",
+    "react-player-custom": "^1.11.14"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
