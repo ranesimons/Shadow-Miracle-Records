@@ -1,17 +1,14 @@
-// pages/index.tsx
+// pages/facebook-auth.tsx
 
-'use client';
+import FacebookAuthButton from "@/components/FacebookAuthButton";
 
-import React from 'react';
-import FacebookVideoList from '@/components/Facebook';
-
-const HomePage: React.FC = () => {
-
+const FacebookAuthPage: React.FC = () => {
   return (
     <div>
-      <FacebookVideoList />
+      <h1>Facebook Authentication</h1>
+      <FacebookAuthButton />
     </div>
   );
 };
 
-export default HomePage;
+export default FacebookAuthPage;
