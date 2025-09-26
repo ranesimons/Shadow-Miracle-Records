@@ -11,7 +11,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // 1. Route to redirect user to Facebook login dialog
 
-  const scope = ['pages_show_list', 'read_insights', 'pages_read_engagement', ];  // adjust scopes as needed
+  const scope = ['pages_manage_posts', 'pages_show_list', 'read_insights', 'pages_read_engagement', 'pages_read_user_content'];  // adjust scopes as needed
   const authorizationUrl = `https://www.facebook.com/${FB_OAUTH_VERSION}/dialog/oauth` +
       `?client_id=${FB_APP_ID}` +
       `&scope=${encodeURIComponent(scope.join(','))}` +
