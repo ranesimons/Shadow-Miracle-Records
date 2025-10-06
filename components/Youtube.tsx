@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 type VideoView = {
   title: string;
+  publishedAt: string;
   videoId: string;
   realVideoId: string;
   viewCount: string | null;
@@ -84,6 +85,7 @@ const YouTubeViewCount: React.FC = () => {
             ) : (
               <div className="video-details">
                 <span>Views: {vv.viewCount}</span>
+                <span>Creation: {vv.publishedAt}</span>
                 <iframe
                   className="video-iframe"
                   width="315"

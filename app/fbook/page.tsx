@@ -306,6 +306,7 @@ const FacebookAuthPage: React.FC = () => {
                 <VideoTitle>{v.title || "(no title)"}</VideoTitle>
                 <VideoInfo>Views: {v.viewCount}</VideoInfo>
                 <VideoInfo>Created: {v.createdTime}</VideoInfo>
+                <VideoInfo>Id: {v.id}</VideoInfo>
                 <iframe
                   src={`https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/1389669548028513/videos/${v.id}/&show_text=0&width=560`}
                   width="560"

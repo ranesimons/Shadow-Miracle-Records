@@ -1,9 +1,11 @@
 // pages/api/youtube.js
 import { NextApiRequest, NextApiResponse } from 'next';
+import { sql } from '../../lib/db';
 
 interface PlaylistItem {
   id: string;
   snippet: {
+    publishedAt: string;
     title: string;
     description: string;
     resourceId: {
@@ -39,11 +41,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const datas = await responses.json();
       const hmm = {
         videoId: i.id,
+        publishedAt: i.snippet.publishedAt,
         realVideoId: i.snippet.resourceId.videoId,
         title: i.snippet.title,
         viewCount: datas.items[0].statistics.viewCount
       }
       stuff.push(hmm);
+
+      // await sql`
+      //   INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views)
+      //   VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount})
+      //   RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views
+      // `;
+
+      await sql`
+        INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views)
+        VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount})
+        ON CONFLICT (youtube_video_id)
+        DO UPDATE SET
+          title = EXCLUDED.title,
+          youtube_video_date = EXCLUDED.youtube_video_date,
+          youtube_video_views = EXCLUDED.youtube_video_views
+        RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views;
+      `;
     }
     res.status(200).json({ viewCount: stuff });
   } catch (error) {
