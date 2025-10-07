@@ -1,5 +1,5 @@
-// pages/api/instagram.js
-import { NextApiRequest, NextApiResponse } from 'next';
+// // pages/api/instagram.js
+// import { NextApiRequest, NextApiResponse } from 'next';
 
 interface Value {
   value: number;
@@ -30,25 +30,79 @@ interface Insights {
   id: string;
 }
 
+// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+//   const apiKey = process.env.IG_ACCESS_TOKEN ?? "";
+
+//   try {
+//     let allVideos: Video[] = [];
+//     let nextPageCursor: string | undefined = undefined;
+
+//     // Fetch videos from the Facebook Page, paging
+//     do {
+//       const afterParam: string = nextPageCursor
+//         ? `&after=${encodeURIComponent(nextPageCursor)}`
+//         : "";
+//       const url = `https://graph.instagram.com/v23.0/me/media?fields=id,media_type,media_product_type,permalink,timestamp,comments_count,like_count,insights.metric(views)&access_token=${encodeURIComponent(apiKey)}${afterParam}`;
+
+//       const response = await fetch(url);
+//       const data = await response.json();
+//       console.log('$$$');
+//       console.log(data);
+//       console.log('$$$');
+
+//       if (data.error) {
+//         if (data.error.message && data.error.message.includes("converted to a business account")) {
+//           break;
+//         }
+//         throw new Error(data.error.message || "Instagram API error");
+//       }
+
+//       if (!Array.isArray(data.data)) {
+//         throw new Error("Unexpected response format: data.data is not an array");
+//       }
+
+//       const batch: Video[] = data.data
+//       .map((video: Video) => ({
+//         id: video.id,
+//         timestamp: video.timestamp,
+//         permalink: video.permalink.replace(/\/$/, ''),
+//         videoId: video.id.includes("_") ? video.id.split("_")[1] : video.id,
+//         viewCount: video.insights
+//           ? video.insights.data[0].values[0].value
+//           : -1,
+//         error: null,
+//       }))
+
+//       allVideos = allVideos.concat(batch);
+
+//       nextPageCursor = data.paging?.cursors?.after;
+//     } while (nextPageCursor);
+
+//     return res.status(200).json({ videos: allVideos });
+//   } catch (err) {
+//     console.error("Error in /api/insta/videos:", err);
+//     return res.status(500).json({ error: err instanceof Error ? err.message : "Internal server error" });
+//   }
+// }
+
+
+// pages/api/instagram.js
+import { NextApiRequest, NextApiResponse } from 'next';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = process.env.IG_ACCESS_TOKEN ?? "";
+  const oEmbedUrl = 'https://api.instagram.com/oembed/';
 
   try {
     let allVideos: Video[] = [];
-    let nextPageCursor: string | undefined = undefined;
+    let nextPageCursor;
 
-    // Fetch videos from the Facebook Page, paging
     do {
-      const afterParam: string = nextPageCursor
-        ? `&after=${encodeURIComponent(nextPageCursor)}`
-        : "";
+      const afterParam: string = nextPageCursor ? `&after=${encodeURIComponent(nextPageCursor)}` : '';
       const url = `https://graph.instagram.com/v23.0/me/media?fields=id,media_type,media_product_type,permalink,timestamp,comments_count,like_count,insights.metric(views)&access_token=${encodeURIComponent(apiKey)}${afterParam}`;
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log('===');
-      console.log(data);
-      console.log('===');
 
       if (data.error) {
         if (data.error.message && data.error.message.includes("converted to a business account")) {
@@ -61,26 +115,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw new Error("Unexpected response format: data.data is not an array");
       }
 
-      const batch: Video[] = data.data
-      .map((video: Video) => ({
-        id: video.id,
-        timestamp: video.timestamp,
-        permalink: video.permalink,
-        videoId: video.id.includes("_") ? video.id.split("_")[1] : video.id,
-        viewCount: video.insights
-          ? video.insights.data[0].values[0].value
-          : -1,
-        error: null,
-      }))
+      const batch = await Promise.all(data.data.map(async (video: Video) => {
+        const permalink = video.permalink.replace(/\/$/, '');
+        const oEmbedResponse = await fetch(`${oEmbedUrl}?url=${encodeURIComponent(permalink)}&access_token=${encodeURIComponent(apiKey)}`);
+        const oEmbedData = await oEmbedResponse.json();
+
+        return {
+          id: video.id,
+          timestamp: video.timestamp,
+          permalink,
+          viewCount: video.insights?.data[0]?.values[0]?.value || -1,
+          embedHtml: oEmbedData.html || null,
+        };
+      }));
 
       allVideos = allVideos.concat(batch);
-
       nextPageCursor = data.paging?.cursors?.after;
     } while (nextPageCursor);
 
     return res.status(200).json({ videos: allVideos });
   } catch (err) {
-    console.error("Error in /api/insta/videos:", err);
+    console.error("Error in /api/instagram:", err);
     return res.status(500).json({ error: err instanceof Error ? err.message : "Internal server error" });
   }
 }

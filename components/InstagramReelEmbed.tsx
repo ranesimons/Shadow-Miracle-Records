@@ -7,11 +7,21 @@ const InstagramReelEmbed: React.FC<{ permalink: string }> = ({ permalink }) => {
   useEffect(() => {
     const fetchEmbedCode = async () => {
       try {
+        console.log('~~~');
+        console.log(permalink);
+        console.log('~~~');
         const response = await fetch(`/api/instagram?url=${encodeURIComponent(permalink)}`);
         const data = await response.json();
 
+        console.log('^^^');
+        console.log(data);
+        console.log('^^^');
+
         // Assuming data.videos is an array
         const video = data.videos.find((v: { permalink: string }) => v.permalink === permalink);
+        console.log('===');
+        console.log(video);
+        console.log('===');
         setEmbedHtml(video?.embedHtml || null);
       } catch (error: unknown) {
         if (error instanceof Error) {

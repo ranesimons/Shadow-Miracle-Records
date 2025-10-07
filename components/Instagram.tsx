@@ -9,6 +9,7 @@ type VideoView = {
   timestamp: string;
   videoId: string;
   viewCount: string | null;
+  embedHtml: string | null;
   permalink: string;
   error: string | null;
 };
@@ -88,7 +89,11 @@ const Instagram: React.FC = () => {
               <div className="video-details">
                 <span>Views: {vv.viewCount}</span>
                 <span>Perma: {vv.permalink}</span>
-                <InstagramReelEmbed permalink={vv.permalink} />
+                {/* <InstagramReelEmbed permalink={vv.permalink} /> */}
+                {vv.embedHtml ? (<div
+                  className="instagram-reel"
+                  dangerouslySetInnerHTML={{ __html: vv.embedHtml }}
+                />) : <div>Loading.....</div>}
               </div>
             )}
           </div>

@@ -2,17 +2,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import fetch from 'node-fetch';
 
+interface TokenResponse {
+  access_token: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // const { code, state } = req.query;
-  // const { rcode } = req.query;
   const { TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET, TIKTOK_REDIRECT_URI } = process.env;
-
-  // Retrieve the stored state from the session or cookie
-  // const storedState = req.session.state;
-
-  // if (state !== storedState) {
-  //   return res.status(400).json({ error: 'Invalid or missing state' });
-  // }
 
   const code = (Array.isArray(req.query.code) ? req.query.code[0] : req.query.code) ?? '';
 
@@ -35,40 +30,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }),
     });
 
-
-
     if (!tokenResponse.ok) {
       throw new Error('Failed to exchange code for access token');
     }
 
-    const tokenData = await tokenResponse.json();
+    const data = await tokenResponse.json() as TokenResponse;
 
-    // Store tokenData in session or database as needed
+    const frontEndRedirect = `https://www.shadowmiraclerecords.com/tok?access_token=${encodeURIComponent(data.access_token)}`;
+    res.redirect(307, frontEndRedirect);
+    res.status(200).json({ data });
 
-    res.status(200).json(tokenData);
-
-
-
-
-    
-
-    // const params = new URLSearchParams();
-    // params.append('client_key', process.env.TIKTOK_CLIENT_KEY!);
-    // params.append('client_secret', process.env.TIKTOK_CLIENT_SECRET!);
-    // params.append('code', code);
-    // params.append('grant_type', 'authorization_code');
-    // params.append('redirect_uri', process.env.TIKTOK_REDIRECT_URI!);
-
-    // const response = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/x-www-form-urlencoded',
-    //   },
-    //   body: params,
-    // });
-
-    // const data = await response.json();
-    // console.log(data);
+    // res.status(200).json(tokenData);
 
   } catch (error: unknown) {
     if (error instanceof Error) {
