@@ -71,7 +71,6 @@ export default async function handler(
       const afterParam: string = nextPageCursor
         ? `&after=${encodeURIComponent(nextPageCursor)}`
         : "";
-      // const url = `https://graph.facebook.com/v12.0/${pageId}/videos?access_token=${encodeURIComponent(access_token)}${afterParam}`;
       const url = `https://graph.facebook.com/v23.0/1389669548028513/videos?fields=id,created_time,title,video_insights.metric(fb_reels_total_plays)&access_token=${encodeURIComponent(access_token)}${afterParam}`;
 
       const response = await fetch(url);
@@ -101,33 +100,6 @@ export default async function handler(
 
       nextPageCursor = data.paging?.cursors?.after;
     } while (nextPageCursor);
-
-    // Fetch view counts for each video
-    // for (const video of allVideos) {
-    //   try {
-    //     const insightsUrl = `https://graph.facebook.com/v12.0/${encodeURIComponent(video.id)}/video_insights?metric=total_video_impressions&access_token=${encodeURIComponent(access_token)}`;
-    //     const insightsResponse = await fetch(insightsUrl);
-    //     const insightsData = await insightsResponse.json();
-
-    //     if (insightsData.error) {
-    //       throw new Error(insightsData.error.message || "Error fetching insights");
-    //     }
-
-    //     if (
-    //       Array.isArray(insightsData.data) &&
-    //       insightsData.data.length > 0 &&
-    //       Array.isArray(insightsData.data[0].values) &&
-    //       insightsData.data[0].values.length > 0
-    //     ) {
-    //       video.viewCount = insightsData.data[0].values[0].value ?? 0;
-    //     } else {
-    //       video.viewCount = 0;
-    //     }
-    //   } catch (err) {
-    //     video.error = err instanceof Error ? err.message : "Unknown error while fetching insights";
-    //     console.error("Error fetching insights for video", video.id, err);
-    //   }
-    // }
 
     return res.status(200).json({ videos: allVideos });
   } catch (err) {

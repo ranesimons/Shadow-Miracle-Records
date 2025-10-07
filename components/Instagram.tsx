@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import InstagramReelEmbed from './InstagramReelEmbed';
 
 type VideoView = {
   id: string;
@@ -89,7 +88,6 @@ const Instagram: React.FC = () => {
               <div className="video-details">
                 <span>Views: {vv.viewCount}</span>
                 <span>Perma: {vv.permalink}</span>
-                {/* <InstagramReelEmbed permalink={vv.permalink} /> */}
                 {vv.embedHtml ? (<div
                   className="instagram-reel"
                   dangerouslySetInnerHTML={{ __html: vv.embedHtml }}

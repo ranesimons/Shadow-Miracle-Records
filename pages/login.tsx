@@ -1,7 +1,6 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+// pages/login.tsx
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/router";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -9,7 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -22,8 +21,8 @@ export default function LoginPage() {
     });
 
     if (resp.ok) {
-      // login succeeded — navigate to some protected page
-      router.push("/dashboard");  // or whatever route
+      // login succeeded, redirect somewhere
+      router.push("/dashboard");
     } else {
       const data = await resp.json();
       setError(data.error || "Login failed");

@@ -81,8 +81,6 @@ const TikTokAuthPage: React.FC = () => {
 
       {!token && <TikTokAuthButton />}
 
-      {/* {!token && <button onClick={() => window.location.href = 'https://www.tiktok.com/login'}>Login with TikTok</button>} */}
-
       {token && loadingVideos && <p>Loading videos...</p>}
 
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
