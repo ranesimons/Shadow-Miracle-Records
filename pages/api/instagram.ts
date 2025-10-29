@@ -59,15 +59,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const batch = await Promise.all(data.data.map(async (video: Video) => {
         const permalink = video.permalink.replace(/\/$/, '');
-        const oEmbedResponse = await fetch(`${oEmbedUrl}?url=${encodeURIComponent(permalink)}&access_token=${encodeURIComponent(apiKey)}`);
-        const oEmbedData = await oEmbedResponse.json();
+        // const oEmbedResponse = await fetch(`${oEmbedUrl}?url=${encodeURIComponent(permalink)}&access_token=${encodeURIComponent(apiKey)}`);
+        // console.log('}}}');
+        // console.log(oEmbedResponse);
+        // console.log('}}}');
+        // const oEmbedData = await oEmbedResponse.json();
+
+        // console.log('{{{');
+        // console.log(oEmbedData);
+        // console.log('{{{');
 
         return {
           id: video.id,
           timestamp: video.timestamp,
           permalink,
           viewCount: video.insights?.data[0]?.values[0]?.value || -1,
-          embedHtml: oEmbedData.html || null,
+          // embedHtml: oEmbedData.html || null,
+          embedHtml: null,
         };
       }));
 

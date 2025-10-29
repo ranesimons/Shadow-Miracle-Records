@@ -1,82 +1,103 @@
-// pages/api/upload.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { IncomingForm, Fields, Files, File } from 'formidable';
+import fs from 'fs';
+import ImageKit from 'imagekit';
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-import formidable, { File } from 'formidable';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-// import mime from 'mime-types';
-import { promises as fs } from 'fs';
-
-interface UploadedFile {
-  filepath: string;
-  originalFilename?: string;
-  mimetype: string;
-  size: number;
-}
-
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
+  urlEndpoint: 'https://ik.imagekit.io/f5ayrcdvt',
+});
 
 export const config = {
   api: {
     bodyParser: false,
-  }
+  },
 };
 
-// parse with formidable
-function parseForm(req: NextApiRequest): Promise<{ fields: formidable.Fields; files: { video: UploadedFile } }> {
-  const form = formidable({ multiples: false });
-  return new Promise((resolve, reject) => {
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-    //   else resolve({ fields, files: { video: files.video as UploadedFile } });
-    });
-  });
+const MAX_VIDEO_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB (adjust as needed)
+
+interface ParsedFields {
+  [key: string]: string | string[] | undefined;
 }
 
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  }
-});
-const BUCKET = process.env.S3_BUCKET_NAME!;
+interface ParsedFiles {
+  [key: string]: File | File[] | undefined;
+}
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    const { fields, files } = await parseForm(req);
-    const videoFile = files.video;
-    if (!videoFile) {
-      return res.status(400).json({ error: 'No file uploaded ("video" field missing)' });
+  const form = new IncomingForm({
+    maxFileSize: MAX_VIDEO_BYTES,
+    keepExtensions: true,
+  });
+
+  form.parse(
+    req,
+    async (err: Error | null, fields: Fields, files: Files) => {
+      if (err) {
+        const message = err.message ?? '';
+        if (message.includes('maxFileSize')) {
+          return res.status(400).json({
+            error: `File size exceeds the allowed limit of ${MAX_VIDEO_BYTES} bytes`,
+          });
+        }
+        return res.status(500).json({ error: 'Failed to parse form data' });
+      }
+
+      const parsedFields = fields as ParsedFields;
+      const parsedFiles = files as ParsedFiles;
+
+      const maybeVideo = parsedFiles.video;
+      if (!maybeVideo) {
+        return res.status(400).json({ error: 'No video file uploaded' });
+      }
+
+      const videoFile: File = Array.isArray(maybeVideo) ? maybeVideo[0] : maybeVideo;
+      const fileSize = videoFile.size ?? 0;
+
+      if (fileSize > MAX_VIDEO_BYTES) {
+        return res.status(400).json({
+          error: `Uploaded file size (${fileSize} bytes) exceeds the allowed limit of ${MAX_VIDEO_BYTES} bytes`,
+        });
+      }
+
+      const filePath = videoFile.filepath;
+      const fileName = videoFile.originalFilename ?? 'upload_video';
+
+      try {
+        const fileBuffer = fs.readFileSync(filePath);
+        const uploadResponse = await imagekit.upload({
+          file: fileBuffer,
+          fileName,
+          folder: '/uploads/videos',
+          isPrivateFile: false,
+        });
+
+        return res.status(200).json({ url: uploadResponse.url });
+      } catch (uploadError: unknown) {
+        console.error('Upload error:', uploadError);
+        const errorMessage =
+          uploadError instanceof Error
+            ? uploadError.message
+            : String(uploadError);
+        return res.status(500).json({
+          error: 'Failed to upload video',
+          details: errorMessage,
+        });
+      } finally {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (cleanupError) {
+          console.warn('Cleanup error (ignoring):', cleanupError);
+        }
+      }
     }
-
-    const filePath = videoFile.filepath;
-    const origName = videoFile.originalFilename || 'upload';
-    const ext = origName.split('.').pop();
-    const safeName = `${Date.now()}_${origName.replace(/\s+/g, '_')}`;
-    // const contentType = mime.lookup(ext || '') || 'application/octet-stream';
-
-    // Read the file into buffer
-    const data = await fs.readFile(filePath);
-
-    // Upload to S3
-    const putCmd = new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: `videos/${safeName}`,
-      Body: data,
-    //   ContentType: contentType,
-      ACL: 'public-read',  // or private if you want to serve via signed URLs
-    });
-
-    await s3.send(putCmd);
-
-    const s3Url = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/videos/${safeName}`;
-
-    return res.status(200).json({ success: true, url: s3Url });
-  } catch (err: unknown) {
-    console.error('Upload error:');
-    return res.status(500).json({ error: 'Upload failed'});
-  }
+  );
 }

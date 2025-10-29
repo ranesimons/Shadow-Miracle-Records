@@ -1,100 +1,78 @@
+// components/VideoUpload.tsx
+
 'use client';
 
 import { useState } from 'react';
 
-export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
-  const [caption, setCaption] = useState('');
-  const [platforms, setPlatforms] = useState<string[]>([]);
-  const [scheduledTime, setScheduledTime] = useState<string>('');
+export default function VideoUpload() {
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string>('');
 
-const handleSubmit = async () => {
-  if (!file) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setVideoFile(e.target.files[0]);
+    }
+  };
 
-  const formData = new FormData();
-  formData.append('video', file);
-
-  try {
-    const uploadResp = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!uploadResp.ok) {
-      throw new Error('File upload failed');
+  const handleUpload = async () => {
+    if (!videoFile) {
+      alert('Please select a video file');
+      return;
     }
 
-    const { videoPath } = await uploadResp.json();
+    try {
+      // Step 1: Get SAS URL from your server
+      const response = await fetch('/api/generate-sas-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: videoFile.name,
+          fileType: videoFile.type,
+        }),
+      });
 
-    const publishResp = await fetch('/api/publish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        platforms,
-        caption,
-        videoPath,
-        scheduledTime: scheduledTime || undefined,
-        youtubeTitle: caption,
-        youtubeDesc: caption,
-      }),
-    });
+      if (!response.ok) {
+        throw new Error('Failed to get SAS URL');
+      }
 
-    if (!publishResp.ok) {
-      throw new Error('Publishing failed');
+      const { uploadUrl } = await response.json();
+
+      // Step 2: Upload the file directly to Azure Blob Storage
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'x-ms-blob-type': 'BlockBlob',
+          'Content-Type': videoFile.type,
+        },
+        body: videoFile,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload video');
+      }
+
+      // Step 3: Set the video URL
+      setVideoUrl(uploadUrl.split('?')[0]);
+    } catch (error) {
+      console.error('Error uploading video:', error);
     }
-
-    const data = await publishResp.json();
-    console.log(data);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+  };
 
   return (
     <div>
-      <h1>Publish Reel / Short</h1>
-      <input type="file" accept="video/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
-      <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption" />
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={platforms.includes('instagram')}
-            onChange={e => {
-              const ps = [...platforms];
-              if (e.target.checked) ps.push('instagram');
-              else ps.splice(ps.indexOf('instagram'), 1);
-              setPlatforms(ps);
-            }}
-          />
-          Instagram
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={platforms.includes('youtube')}
-            onChange={e => {
-              const ps = [...platforms];
-              if (e.target.checked) ps.push('youtube');
-              else ps.splice(ps.indexOf('youtube'), 1);
-              setPlatforms(ps);
-            }}
-          />
-          YouTube
-        </label>
-        {/* Add Facebook, TikTok, Twitter options */}
-      </div>
-      <div>
-        <label>
-          Schedule at:
-          <input
-            type="datetime-local"
-            value={scheduledTime}
-            onChange={e => setScheduledTime(e.target.value)}
-          />
-        </label>
-      </div>
-      <button onClick={handleSubmit}>Publish / Schedule</button>
+      <input type="file" accept="video/*" onChange={handleFileChange} />
+      <button onClick={handleUpload}>Upload Video</button>
+      {videoUrl && (
+        <div>
+          <p>Video uploaded successfully!</p>
+          <video controls>
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      )}
     </div>
   );
 }
