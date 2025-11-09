@@ -2,12 +2,12 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
-import { BlobServiceClient } from '@azure/storage-blob';
+// import { BlobServiceClient } from '@azure/storage-blob';
 import fetch from 'node-fetch';
-import stream from 'stream';
-import { promisify } from 'util';
+// import stream from 'stream';
+// import { promisify } from 'util';
 
-const pipeline = promisify(stream.pipeline);
+// const pipeline = promisify(stream.pipeline);
 
 // Load env
 const {
@@ -17,7 +17,7 @@ const {
   YOUTUBE_CLIENT_ID,
   YOUTUBE_CLIENT_SECRET,
   YOUTUBE_REFRESH_TOKEN,
-  YOUTUBE_CHANNEL_ID,          // optional if needed
+  // YOUTUBE_CHANNEL_ID,          // optional if needed
 } = process.env;
 
 if (!AZURE_STORAGE_ACCOUNT_NAME || !AZURE_STORAGE_SAS_TOKEN || !AZURE_VIDEO_CONTAINER_NAME) {
@@ -27,15 +27,15 @@ if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET) {
   throw new Error('YouTube OAuth env variables missing');
 }
 
-const blobServiceClient = new BlobServiceClient(
-  `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net?${AZURE_STORAGE_SAS_TOKEN}`
-);
+// const blobServiceClient = new BlobServiceClient(
+//   `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net?${AZURE_STORAGE_SAS_TOKEN}`
+// );
 
 const oauth2Client = new google.auth.OAuth2(
   YOUTUBE_CLIENT_ID,
   YOUTUBE_CLIENT_SECRET
 );
-// oauth2Client.setCredentials({ refresh_token: YOUTUBE_REFRESH_TOKEN });
+oauth2Client.setCredentials({ refresh_token: YOUTUBE_REFRESH_TOKEN });
 
 const youtube = google.youtube({
   version: 'v3',
@@ -67,21 +67,25 @@ export default async function handler(
     }
 
     // 1) Get blob URL / stream from Azure
-    const containerClient = blobServiceClient.getContainerClient(AZURE_VIDEO_CONTAINER_NAME || "");
-    const blobClient = containerClient.getBlobClient(blobName);
+    // const containerClient = blobServiceClient.getContainerClient(AZURE_VIDEO_CONTAINER_NAME || "");
+    // const blobClient = containerClient.getBlobClient(blobName);
     // const blobUrl = blobClient.url + `?${AZURE_STORAGE_SAS_TOKEN}`;
 
     // Define the blob URL with the SAS token appended
     // const blobUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${AZURE_VIDEO_CONTAINER_NAME}/${blobName}?${AZURE_STORAGE_SAS_TOKEN}`;
 
-    const blobUrl = 'https://smr.blob.core.windows.net/uploads/year2025_month10_day31_Devout%20Kuya%20Verse.mov?sp=racwdli&st=2025-10-23T03:38:09Z&se=2025-10-31T11:53:09Z&sv=2024-11-04&sr=c&sig=cNRgqVGgV3fAzaC1kr9flhddd7rgrnlAy7ETPVOyF%2Bo%3D'
+    // const blobUrl = 'https://smr.blob.core.windows.net/uploads/year2025_month10_day31_Devout%20Kuya%20Verse.mov?sp=racwdli&st=2025-10-23T03:38:09Z&se=2025-10-31T11:53:09Z&sv=2024-11-04&sr=c&sig=cNRgqVGgV3fAzaC1kr9flhddd7rgrnlAy7ETPVOyF%2Bo%3D'
 
-    console.log(']]]');
-    console.log(blobUrl);
-    console.log(']]]');
+    // console.log(']]]');
+    // console.log(blobUrl);
+    // console.log(']]]');
+
+    console.log('[[[');
+    console.log(blobName);
+    console.log('[[[');
 
     // 2) Fetch the blob and get a readable stream
-    const azureRes = await fetch(blobUrl);
+    const azureRes = await fetch(blobName);
     if (!azureRes.ok) {
       throw new Error(`Failed to fetch blob from Azure: ${azureRes.statusText}`);
     }
