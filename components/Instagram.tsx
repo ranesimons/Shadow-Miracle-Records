@@ -238,6 +238,7 @@ const Instagram: React.FC = () => {
               <span className="error-message">Error: {vv.error}</span>
             ) : (
               <div className="video-details">
+                <span>Id: {vv.id}</span><br/>
                 <span>Views: {vv.viewCount}</span><br/>
                 <span>Permalink: <a href={vv.permalink} target="_blank" rel="noopener noreferrer">{vv.permalink}</a></span>
                 <div className="embed-wrapper" style={{ marginTop: '1rem' }}>

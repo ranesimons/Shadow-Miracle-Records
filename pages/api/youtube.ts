@@ -48,21 +48,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       stuff.push(hmm);
 
-      // await sql`
-      //   INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views)
-      //   VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount})
-      //   RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views
-      // `;
+      console.log('===')
+      console.log(hmm)
+      console.log('===')
 
       await sql`
-        INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views)
-        VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount})
+        INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views, real_video_id)
+        VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount}, ${hmm.realVideoId})
         ON CONFLICT (youtube_video_id)
         DO UPDATE SET
           title = EXCLUDED.title,
           youtube_video_date = EXCLUDED.youtube_video_date,
-          youtube_video_views = EXCLUDED.youtube_video_views
-        RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views;
+          youtube_video_views = EXCLUDED.youtube_video_views,
+          real_video_id = EXCLUDED.real_video_id
+        RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views, real_video_id;
       `;
     }
     res.status(200).json({ viewCount: stuff });

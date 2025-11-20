@@ -2,7 +2,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { TIKTOK_CLIENT_KEY, TIKTOK_SCOPES } = process.env;
+  const { TIKTOK_CLIENT_KEY } = process.env;
+
+  // const TIKTOK_SCOPES = 'user.info.basic,video.list,video.publish'
+
+  const TIKTOK_SCOPES = 'user.info.basic,video.list'
 
   // const TIKTOK_REDIRECT_URI: string = process.env.TIKTOK_REDIRECT_URI ?? 'https://shadowmiraclerecords.com/api/auth/callback/tiktok';
   const TIKTOK_REDIRECT_URI: string = process.env.TIKTOK_REDIRECT_URI ?? 'https://shadowmiraclerecords.com/api/auth/callback/tiktok';

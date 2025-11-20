@@ -22,6 +22,7 @@ interface FetchUploadsResponse {
 
 export default function VideoUploadByDay({}) {
   const [uploadingToYoutube, setUploadingToYoutube] = useState(false);
+  const [uploadingToTiktok, setUploadingToTiktok] = useState(false);
   const today = new Date();
   const year = today.getFullYear();
   const monthZeroBased = today.getMonth();
@@ -229,6 +230,44 @@ export default function VideoUploadByDay({}) {
     }
   };
 
+  const handleUploadToTikTok = async (blobName: string) => {
+    if (!blobName) {
+    //   setError('Please provide all required fields');
+      console.log('Please provide all required fields')
+      return;
+    }
+
+    console.log('&&&');
+    console.log(blobName);
+    console.log('&&&');
+
+    setUploadingToTiktok(true);
+    // setError(null);
+
+    try {
+      const response = await fetch('/api/upload-tiktok', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          blobName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload video to TikTok');
+      }
+
+      alert('Video uploaded successfully');
+    } catch (err) {
+    //   setError(err instanceof Error ? err.message : 'An error occurred');
+        console.log(err)
+    } finally {
+      setUploadingToTiktok(false);
+    }
+  };
+
   return (
     <div>
       <h1>
@@ -256,6 +295,9 @@ export default function VideoUploadByDay({}) {
                     <div>
                         <button onClick={() => handleUploadToYouTube(state.uploadedUrl)} disabled={uploadingToYoutube}>
                             {uploadingToYoutube ? 'Uploading...' : 'Upload to YouTube'}
+                        </button>
+                        <button onClick={() => handleUploadToTikTok(state.uploadedUrl)} disabled={uploadingToTiktok}>
+                            {uploadingToTiktok ? 'Uploading...' : 'Upload to TikTok'}
                         </button>
                     </div>
                   </p>

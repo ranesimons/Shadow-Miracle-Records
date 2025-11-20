@@ -28,6 +28,10 @@ const TikTokAuthPage: React.FC = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const queryToken = searchParams.get("access_token");
 
+    console.log('^^^')
+    console.log(queryToken)
+    console.log('^^^')
+
     if (queryToken) {
       window.history.replaceState({}, "", window.location.pathname);
       handleToken(queryToken);

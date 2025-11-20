@@ -1,6 +1,6 @@
 // pages/api/fb/videos.ts
-
 import type { NextApiRequest, NextApiResponse } from "next";
+import { sql } from '../../lib/db';
 
 interface Value {
   value: number;
@@ -100,6 +100,17 @@ export default async function handler(
 
       nextPageCursor = data.paging?.cursors?.after;
     } while (nextPageCursor);
+
+    for (const i of allVideos) {
+      await sql`
+        UPDATE public.reels
+        SET
+          facebook_video_views = ${i.viewCount},
+          facebook_video_date = ${i.created_time}
+        WHERE
+          facebook_video_id = ${i.id};
+      `;
+    }
 
     return res.status(200).json({ videos: allVideos });
   } catch (err) {

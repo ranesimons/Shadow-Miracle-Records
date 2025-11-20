@@ -1,6 +1,6 @@
 // // pages/api/instagram.js
-
 import { NextApiRequest, NextApiResponse } from 'next';
+import { sql } from '../../lib/db';
 
 interface Value {
   value: number;
@@ -31,12 +31,19 @@ interface Insights {
   id: string;
 }
 
+interface Batch {
+  id: string;
+  timestamp: string;
+  permalink: string;
+  viewCount: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const apiKey = process.env.IG_ACCESS_TOKEN ?? "";
   const oEmbedUrl = 'https://api.instagram.com/oembed/';
 
   try {
-    let allVideos: Video[] = [];
+    let allVideos: Batch[] = [];
     let nextPageCursor;
 
     do {
@@ -83,9 +90,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       nextPageCursor = data.paging?.cursors?.after;
     } while (nextPageCursor);
 
+    for (const i of allVideos) {
+      await sql`
+        UPDATE public.reels
+        SET
+          instagram_video_views = ${i.viewCount},
+          instagram_video_date = ${i.timestamp}
+        WHERE
+          instagram_video_id = ${i.id};
+      `;
+    }
     return res.status(200).json({ videos: allVideos });
   } catch (err) {
     console.error("Error in /api/instagram:", err);
     return res.status(500).json({ error: err instanceof Error ? err.message : "Internal server error" });
   }
 }
+
+
+
+// await sql`
+//   INSERT INTO public.reels (title, youtube_video_id, youtube_video_date, youtube_video_views)
+//   VALUES (${hmm.title}, ${hmm.videoId}, ${hmm.publishedAt}, ${hmm.viewCount})
+//   ON CONFLICT (youtube_video_id)
+//   DO UPDATE SET
+//     title = EXCLUDED.title,
+//     youtube_video_date = EXCLUDED.youtube_video_date,
+//     youtube_video_views = EXCLUDED.youtube_video_views
+//   RETURNING id, title, youtube_video_id, youtube_video_date, youtube_video_views;
+// `;

@@ -2,26 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 
-type VideoView = {
+type Reel = {
   title: string;
-  publishedAt: string;
-  videoId: string;
+  facebookVideoViews: number;
+  instagramVideoViews: number;
+  tiktokVideoViews: number;
+  youtubeVideoViews: number;
+  totalVideoViews: number;
   realVideoId: string;
-  viewCount: string | null;
-  error: string | null;
+  youtubeVideoDate: string;
 };
 
 type ApiResponse = {
-  viewCount: VideoView[];
+  total: Reel[];
 };
 
 type ApiError = {
   error: string;
 };
 
-const YouTubeViewCount: React.FC = () => {
-  const [videoViews, setVideoViews] = useState<VideoView[]>([]);
-  const [sortedVideoViews, setSortedVideoViews] = useState<VideoView[]>([]);
+const TotalViewCount: React.FC = () => {
+  const [videoViews, setVideoViews] = useState<Reel[]>([]);
+  const [sortedVideoViews, setSortedVideoViews] = useState<Reel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -32,14 +34,14 @@ const YouTubeViewCount: React.FC = () => {
       setError(null);
 
       try {
-        const res = await fetch(`/api/youtube`);
+        const res = await fetch(`/api/all`);
         if (!res.ok) {
           const errBody: ApiError = await res.json();
           throw new Error(errBody.error || `API error with status ${res.status}`);
         }
         const data: ApiResponse = await res.json();
-        setVideoViews(data.viewCount);
-        setSortedVideoViews(data.viewCount);
+        setVideoViews(data.total);
+        setSortedVideoViews(data.total);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);
@@ -54,14 +56,20 @@ const YouTubeViewCount: React.FC = () => {
     fetchViewCount();
   }, []);
 
-  const handleSort = () => {
-    const sorted = [...videoViews].sort((a, b) => {
-      const aViews = parseInt(a.viewCount || '0');
-      const bViews = parseInt(b.viewCount || '0');
-      return sortOrder === 'asc' ? aViews - bViews : bViews - aViews;
+  const sortByTotalViews = () => {
+    // Make a new array copy to avoid mutating state directly
+    const newSorted = [...sortedVideoViews].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.totalVideoViews - b.totalVideoViews;
+      } else {
+        return b.totalVideoViews - a.totalVideoViews;
+      }
     });
-    setSortedVideoViews(sorted);
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+
+    setSortedVideoViews(newSorted);
+
+    // Toggle sort order for next click
+    setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
   if (isLoading) {
@@ -74,20 +82,22 @@ const YouTubeViewCount: React.FC = () => {
 
   return (
     <div className="container">
-      <button className="sort-button" onClick={handleSort}>
-        Sort by Views ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
+      <button onClick={sortByTotalViews}>
+        Sort by Total Views ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
       </button>
+
       <div className="video-list">
         {sortedVideoViews.map((vv) => (
-          <div key={vv.videoId} className="video-item">
-            {vv.error ? (
-              <span className="error-message">Error: {vv.error}</span>
-            ) : (
-              <div className="video-details">
-                <span>Id: {vv.videoId}</span>
-                <span>Views: {vv.viewCount}</span>
-                <span>Creation: {vv.publishedAt}</span>
-                <iframe
+          <div key={vv.title} className="video-item">
+            <div className="video-details">
+              <div>Title: {vv.title}</div>
+              <div>Youtube Video Date: {vv.youtubeVideoDate}</div>
+              <div>Facebook: {vv.facebookVideoViews}</div>
+              <div>Instagram: {vv.instagramVideoViews}</div>
+              <div>TikTok: {vv.tiktokVideoViews}</div>
+              <div>YouTube: {vv.youtubeVideoViews}</div>
+              <div><strong>Total: {vv.totalVideoViews}</strong></div>
+              <iframe
                   className="video-iframe"
                   width="315"
                   height="560"
@@ -96,8 +106,7 @@ const YouTubeViewCount: React.FC = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
-              </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
@@ -105,4 +114,4 @@ const YouTubeViewCount: React.FC = () => {
   );
 };
 
-export default YouTubeViewCount;
+export default TotalViewCount;

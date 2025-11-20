@@ -1,6 +1,6 @@
 // pages/api/tiktok/videos.ts
-
 import type { NextApiRequest, NextApiResponse } from "next";
+import { sql } from '../../lib/db';
 
 interface Video {
   id: string;
@@ -102,60 +102,16 @@ export default async function handler(
       cursor = nextCursor;
     } while (cursor)
 
-    // do {
-    //   const afterParam: string = nextPageCursor
-    //     ? `&cursor=${encodeURIComponent(nextPageCursor)}`
-    //     : "";
-    //   const url = `https://open.tiktokapis.com/v2/video/list/?fields=id,create_time,title,embed_link,view_count${afterParam}`;
-
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       Authorization: `Bearer ${access_token}`,
-    //       "Content-Type": "application/json",
-    //     },
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (data.error) {
-    //     const { code, message, log_id } = data.error;
-    //     console.log('???');
-    //     console.log(code);
-    //     console.log(message);
-    //     console.log(log_id);
-    //     console.log('???');
-    //     const errorMessage = `TikTok API Error: ${message} (Code: ${code}, Log ID: ${log_id})`;
-    //     if (code !== 'ok') {
-    //       throw new Error(errorMessage);
-    //     }
-    //   }
-
-    //   console.log(']]]');
-    //   console.log(data);
-    //   console.log(']]]');
-
-    //   if (!Array.isArray(data.data.videos)) {
-    //     throw new Error("Unexpected response format: data.data.videos is not an array");
-    //   }
-
-    //   console.log('[[[');
-    //   console.log(data.data.videos);
-    //   console.log('[[[');
-
-    //   const batch: Video[] = data.data.videos.map((video: Video) => ({
-    //     id: video.id,
-    //     create_time: video.create_time,
-    //     title: video.title ?? "",
-    //     embed_link: video.embed_link,
-    //     view_count: video.view_count ?? 0,
-    //     error: null,
-    //   }));
-
-    //   allVideos = allVideos.concat(batch);
-
-    //   nextPageCursor = data.data.cursor;
-    // } while (nextPageCursor);
+    for (const i of allVideos) {
+      await sql`
+        UPDATE public.reels
+        SET
+          tiktok_video_views = ${i.view_count},
+          tiktok_video_date = ${i.create_time}
+        WHERE
+          tiktok_video_id = ${i.id};
+      `;
+    }
 
     return res.status(200).json({ videos: allVideos });
   } catch (err) {
