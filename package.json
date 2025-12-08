@@ -17,14 +17,16 @@
     "formidable": "^3.5.4",
     "googleapis": "^164.1.0",
     "imagekit": "^6.0.0",
-    "next": "15.5.2",
+    "next": "^16.0.7",
+    "next-auth": "^4.24.13",
     "node-fetch": "^3.3.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-facebook-player": "^0.1.0",
     "react-player": "^3.3.2",
     "react-player-custom": "^1.11.14",
-    "styled-components": "^6.1.19"
+    "styled-components": "^6.1.19",
+    "twitter-api-v2": "^1.28.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

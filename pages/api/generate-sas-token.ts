@@ -2,8 +2,18 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { BlobServiceClient, StorageSharedKeyCredential, ContainerSASPermissions, generateBlobSASQueryParameters } from '@azure/storage-blob';
+import { getServerSession } from "next-auth/next";
+
+import { authOptions } from "@/pages/api/auth/[...nextauth]";  // path to your NextAuth config
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  if (session.user?.email != process.env.MY_PERSONAL_EMAIL) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   if (req.method === 'POST') {
     const { fileName, fileType } = req.body;
 

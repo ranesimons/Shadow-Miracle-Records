@@ -273,7 +273,7 @@ export default function VideoUploadByDay({}) {
       <h1>
         Upload Video by Day of Month — {year}-{(monthZeroBased + 1).toString().padStart(2, '0')}
       </h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '12px' }}>
+      {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '12px' }}>
         {states.map((state, idx) => {
           const day = idx + 1;
           return (
@@ -319,7 +319,7 @@ export default function VideoUploadByDay({}) {
             </div>
           );
         })}
-      </div>
+      </div> */}
     </div>
   );
 }
