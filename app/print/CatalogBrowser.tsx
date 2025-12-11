@@ -1,7 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { CatalogCategory, CatalogProduct } from '@/lib/printful-types';
+import { upload } from '@vercel/blob/client';
+
+interface PutBlobResult {
+  pathname: string;
+  contentType: string;
+  contentDisposition: string;
+  url: string;
+  downloadUrl: string;
+}
 
 type ApiCatalogProductsResponse = { products?: unknown };
 
@@ -36,6 +45,9 @@ export default function CatalogBrowser({ categories }: Props) {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // track variants per product ID
   const [variantsMap, setVariantsMap] = useState<Record<number, CatalogVariant[]>>({});
@@ -124,12 +136,106 @@ export default function CatalogBrowser({ categories }: Props) {
     }
   };
 
+  // const onChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   const f = e.target.files?.[0] ?? null;
+  //   if (f && f.type.startsWith('image/')) {
+  //     setFile(f);
+  //     setError(null);
+  //   } else {
+  //     setFile(null);
+  //     setError('Please select a valid image file.');
+  //   }
+  // };
+
+  // const onUpload = async () => {
+  //   if (!file) {
+  //     setError('No file selected');
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     const resp = await fetch(
+  //       `/api/upload-image?filename=${encodeURIComponent(file.name)}`,
+  //       {
+  //         method: 'POST',
+  //         body: file,  // send raw file
+  //       }
+  //     );
+
+  //     if (!resp.ok) {
+  //       const text = await resp.text();
+  //       throw new Error(`Upload failed: ${resp.status} – ${text}`);
+  //     }
+
+  //     const data = (await resp.json()) as PutBlobResult;
+  //     setBlobUrl(data.url);
+  //   } catch (err: any) {
+  //     console.error('Upload error:', err);
+  //     setError(err.message || 'Upload failed');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fileInput = form.elements.namedItem('file') as HTMLInputElement;
+    if (!fileInput.files?.length) {
+      setError('No file selected');
+      return;
+    }
+    const file = fileInput.files[0];
+    setUploading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const resp = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`Upload failed: ${resp.status} — ${txt}`);
+      }
+      const data = await resp.json();
+      setBlobUrl(data.url);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   console.log('%%%')
   console.log(costMap)
   console.log('%%%')
 
   return (
     <div style={{ padding: 20 }}>
+      <form onSubmit={handleSubmit}>
+      <input name="file" type="file" accept="image/*" required />
+      <button type="submit" disabled={uploading}>
+        {uploading ? 'Uploading…' : 'Upload'}
+      </button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {blobUrl && (
+        <div>
+          <p>Uploaded image URL:</p>
+          <a href={blobUrl} target="_blank" rel="noreferrer">{blobUrl}</a>
+          <br />
+          <img src={blobUrl} alt="Uploaded" style={{ maxWidth: 200 }} />
+        </div>
+      )}
+      </form>
+
       <h1>Browse Printful Catalog</h1>
 
       <label>

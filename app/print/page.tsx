@@ -1,7 +1,8 @@
 // app/print/page.tsx  — Server Component
 import React from 'react';
 import { CatalogCategory } from '@/lib/printful-types';
-import CatalogBrowser from '@/app/print/CatalogBrowser';
+// import CatalogBrowser from '@/app/print/CatalogBrowser';
+import BetterBrowser from '@/app/print/BetterBrowser';
 
 async function fetchCategories(): Promise<CatalogCategory[]> {
   const token = process.env.PRINTFUL_API_TOKEN;
@@ -18,5 +19,6 @@ async function fetchCategories(): Promise<CatalogCategory[]> {
 
 export default async function PrintfulCatalogPage() {
   const categories = await fetchCategories();
-  return <CatalogBrowser categories={categories} />;
+  // return <CatalogBrowser categories={categories} />;
+  return <BetterBrowser categories={categories} />;
 }
