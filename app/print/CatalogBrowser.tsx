@@ -273,7 +273,7 @@ export default function CatalogBrowser({ categories }: Props) {
                 <ul style={{ marginTop: '0.5rem' }}>
                   {variantsMap[prod.id]!.map(v => (
                     <li key={v.id} style={{ marginBottom: '0.5rem' }}>
-                      {v.name} — size: {v.size} — variant_id: {v.id}{' '}
+                      {v.name} — size: {v.size} — variant_id: {v.id} — product_id: {prod.id}{' '}
                       <button
                         onClick={() => fetchCostForVariant(v.id)}
                         disabled={loadingCost[v.id]}

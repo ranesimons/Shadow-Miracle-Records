@@ -2,9 +2,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const PRINTFUL_API_BASE = "https://api.printful.com";
-// const PRINTFUL_TOKEN = process.env.PRINTFUL_TOKEN!;
-const PRINTFUL_TOKEN = process.env.PRINTFUL_API_TOKEN!;
-const STORE_ID = process.env.PRINTFUL_STORE_ID;  // optional depending on your auth mode
+const PRINTFUL_TOKEN = "NdYpfeAWqzy4cuySeRy7UrX36VYUaSxBIKoFiPYA";
+const STORE_ID = "17317046";
+// const PRINTFUL_TOKEN = process.env.PRINTFUL_API_TOKEN!;
+// const STORE_ID = process.env.PRINTFUL_STORE_ID;  // optional depending on your auth mode
 
 // --- Types ---
 // Request body you expect from client
@@ -181,6 +182,10 @@ async function createMockupTask(
       }),
     }
   );
+
+  console.log('&&&')
+  console.log(resp)
+  console.log('&&&')
 
   if (!resp.ok) {
     const text = await resp.text();
