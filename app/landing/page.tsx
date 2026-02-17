@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { redirect } from "next/navigation";
-import VideoUploadByDay from "@/components/VideoUploadByDay";
+import TikTokDashboard from "@/components/SocialMediaDashboard";
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
@@ -10,6 +10,9 @@ export default async function LandingPage() {
     redirect("/api/auth/signin");
   }
   if (session.user?.email == process.env.MY_PERSONAL_EMAIL) {
-    return <VideoUploadByDay />;
+    return (
+    
+    <TikTokDashboard />
+    );
   }
 }

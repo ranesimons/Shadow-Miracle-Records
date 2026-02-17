@@ -1,9 +1,12 @@
-// components/VideoUploadByDay.tsx
+// components/TiktokVideoManager.tsx
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
 
-import TikTokAuthButton from "@/components/TikTokAuthButton";
+// Define the Props interface
+interface TikTokVideoManagerProps {
+  tiktokAuthToken: string; // The Landing Page passes this in
+}
 
 type UploadState = {
   file: File | null;
@@ -21,7 +24,7 @@ interface FetchUploadsResponse {
   uploads: UploadMetadata[];
 }
 
-export default function VideoUploadByDay() {
+const TiktokVideoManager: React.FC<TikTokVideoManagerProps> = ({ tiktokAuthToken }) => {
   const today = new Date();
   const year = today.getFullYear();
   const monthZeroBased = today.getMonth();
@@ -31,9 +34,6 @@ export default function VideoUploadByDay() {
   const [uploadingToFacebook, setUploadingToFacebook] = useState(false);
   const [uploadingToInstagram, setUploadingToInstagram] = useState(false);
   const [uploadingToTwitter, setUploadingToTwitter] = useState(false);
-  const [tiktokAuthToken, setTiktokAuthToken] = useState<string | null>(null);
-  const [tiktokAuthError, setTiktokAuthError] = useState<string | null>(null);
-  const [loadingTiktokAuth, setloadingTiktokAuth] = useState<boolean>(false);
   const [states, setStates] = useState<UploadState[]>(
     () =>
       Array.from({ length: daysInMonth }, () => ({
@@ -232,44 +232,6 @@ export default function VideoUploadByDay() {
     }
   };
 
-  // Inside your /drive component
-  // const handleUploadToTikTok = async (videoUrl: string) => {
-  //   // Get token from URL hash (e.g., #access_token=...)
-  //   const hash = window.location.hash.substring(1);
-  //   const params = new URLSearchParams(hash);
-  //   const token = params.get("access_token");
-
-  //   if (!token) {
-  //     alert("No TikTok session found. Please authenticate first.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await fetch('/api/upload-tiktok', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${token}` // Pass the token here
-  //       },
-  //       body: JSON.stringify({
-  //         blobName: videoUrl,
-  //         title: "My Record Label Video",
-  //         description: "#music #newrelease"
-  //       }),
-  //     });
-
-  //     const result = await response.json();
-  //     if (result.success) {
-  //       alert("Upload initialized! Publish ID: " + result.publishId);
-  //     } else {
-  //       console.error("TikTok Error:", result.details);
-  //       alert("Upload failed: " + result.error);
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // };
-
   const handleUploadToFacebook = async (blobName: string) => {
     if (!blobName) {
       console.log('Please provide all required fields')
@@ -363,118 +325,9 @@ export default function VideoUploadByDay() {
     }
   };
 
-  const handleTiktokToken = (accessToken: string) => {
-    setTiktokAuthToken(accessToken);
-    setloadingTiktokAuth(false);
-  };
-
-  // useEffect(() => {
-  //   setloadingTiktokAuth(true);
-
-  //   const searchParams = new URLSearchParams(window.location.search);
-  //   const queryToken = searchParams.get("access_token");
-
-  //   console.log('^^^')
-  //   console.log(queryToken)
-  //   console.log('^^^')
-
-  //   if (queryToken) {
-  //     window.history.replaceState({}, "", window.location.pathname);
-  //     handleTiktokToken(queryToken);
-  //     return;
-  //   }
-
-  //   if (window.location.hash) {
-  //     const hash = window.location.hash.substring(1);
-  //     const hashParams = new URLSearchParams(hash);
-  //     const hashToken = hashParams.get("access_token");
-
-  //     if (hashToken) {
-  //       window.history.replaceState({}, "", window.location.pathname);
-  //       handleTiktokToken(hashToken);
-  //       return;
-  //     }
-  //   }
-  // }, []);
-
-  useEffect(() => {
-    // 1. Check if we already have a token to avoid re-running logic
-    if (tiktokAuthToken) {
-      setloadingTiktokAuth(false);
-      return;
-    }
-
-    const searchParams = new URLSearchParams(window.location.search);
-    const queryToken = searchParams.get("access_token");
-    
-    // TikTok often returns errors in the query string (e.g., ?error=access_denied)
-    const authError = searchParams.get("error") || searchParams.get("error_description");
-
-    if (authError) {
-      setTiktokAuthError(authError);
-      setloadingTiktokAuth(false);
-      return;
-    }
-
-    // 2. Helper to handle token cleanup and state update
-    const finalizeAuth = (token: string) => {
-      // Remove tokens from URL so they don't leak in history/bookmarks
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setTiktokAuthToken(token);
-      setloadingTiktokAuth(false);
-    };
-
-    // 3. Check Query Parameters
-    if (queryToken) {
-      finalizeAuth(queryToken);
-      return;
-    }
-
-    // 4. Check URL Hash (Common for Implicit Flow)
-    if (window.location.hash) {
-      const hash = window.location.hash.substring(1);
-      const hashParams = new URLSearchParams(hash);
-      const hashToken = hashParams.get("access_token");
-
-      if (hashToken) {
-        finalizeAuth(hashToken);
-        return;
-      }
-    }
-
-    // 5. If we got here and no token was found, stop the loading spinner
-    setloadingTiktokAuth(false);
-  }, [tiktokAuthToken]); // Added dependency for safety
-
   return (
-    // <div style={{ color: "#FFFFFF" }}>
-    //   <h1>TikTok Authentication</h1>
-
-    //   {loadingTiktokAuth && !tiktokAuthToken && <p>Authenticating with TikTok...</p>}
-    //   {!tiktokAuthToken && <TikTokAuthButton />}
-    //   {tiktokAuthError && <p style={{ color: "red" }}>Error: {tiktokAuthError}</p>}
 
     <div style={{ color: "#FFFFFF" }}>
-      <h1>TikTok Authentication</h1>
-
-      {loadingTiktokAuth && !tiktokAuthToken && <p>Checking TikTok permissions...</p>}
-      
-      {/* Show button only if NOT loading and NO token */}
-      {!loadingTiktokAuth && !tiktokAuthToken && (
-        <>
-          <p>Please connect your account to continue:</p>
-          <TikTokAuthButton />
-        </>
-      )}
-
-      {/* Success State */}
-      {tiktokAuthToken && (
-        <p style={{ color: "#4BB543" }}>✓ Connected to TikTok</p>
-      )}
-
-      {tiktokAuthError && (
-        <p style={{ color: "#FF4D4D" }}>Error: {tiktokAuthError}</p>
-      )}
 
       <h1>
         Upload Video by Day — {year}-{(monthZeroBased + 1).toString().padStart(2, "0")}
@@ -542,3 +395,5 @@ export default function VideoUploadByDay() {
     </div>
   );
 }
+
+export default TiktokVideoManager;

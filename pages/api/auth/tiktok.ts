@@ -6,7 +6,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // const TIKTOK_SCOPES = 'user.info.basic,video.list,video.publish'
 
-  const TIKTOK_SCOPES = 'user.info.basic,video.list'
+  // const TIKTOK_SCOPES = 'user.info.basic,video.list'
+
+  const TIKTOK_SCOPES = 'user.info.basic,video.list,video.upload,video.publish';
 
   // const TIKTOK_REDIRECT_URI: string = process.env.TIKTOK_REDIRECT_URI ?? 'https://shadowmiraclerecords.com/api/auth/callback/tiktok';
   const TIKTOK_REDIRECT_URI: string = process.env.TIKTOK_REDIRECT_URI ?? 'https://shadowmiraclerecords.com/api/auth/callback/tiktok';
