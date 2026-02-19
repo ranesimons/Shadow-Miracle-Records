@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { redirect } from "next/navigation";
-import TikTokDashboard from "@/components/SocialMediaDashboard";
+import SocialMediaDashboard from "@/components/SocialMediaDashboard";
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
@@ -12,7 +12,7 @@ export default async function LandingPage() {
   if (session.user?.email == process.env.MY_PERSONAL_EMAIL) {
     return (
     
-    <TikTokDashboard />
+    <SocialMediaDashboard />
     );
   }
 }

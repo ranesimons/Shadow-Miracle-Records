@@ -10,7 +10,17 @@ const TikTokAuthButton = () => {
   };
 
   return (
-    <button onClick={handleAuth}>
+    <button 
+      onClick={handleAuth}
+      style={{ 
+        color: '#FFFFFF', 
+        backgroundColor: '#FF0000', 
+        padding: '10px 20px', 
+        border: 'none', 
+        borderRadius: '4px',
+        cursor: 'pointer' 
+      }}
+    >
       Authenticate with TikTok
     </button>
   );

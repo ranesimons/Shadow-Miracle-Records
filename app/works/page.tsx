@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import YoutubeAuthButton from "@/components/YoutubeAuthButton";
+import YouTubeAuthButton from "@/components/YouTubeAuthButton";
 
 interface Video {
   id: string;
@@ -53,7 +53,7 @@ const YoutubeAuthPage: React.FC = () => {
 
       {loadingAuth && !token && <p>Authenticating with Youtube...</p>}
 
-      {!token && <YoutubeAuthButton />}
+      {!token && <YouTubeAuthButton />}
 
       {token && loadingVideos && <p>Loading videos...</p>}
 

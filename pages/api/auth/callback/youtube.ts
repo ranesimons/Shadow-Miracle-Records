@@ -1,61 +1,60 @@
-// // pages/api/auth/callback/tiktok.ts
-// import { NextApiRequest, NextApiResponse } from 'next';
-// import fetch from 'node-fetch';
+// // pages/api/auth/callback/youtube.ts
 
-// interface TokenResponse {
-//   access_token: string;
+// import type { NextApiRequest, NextApiResponse } from 'next';
+// import { google } from 'googleapis';
+
+// const {
+//   YOUTUBE_CLIENT_ID,
+//   YOUTUBE_CLIENT_SECRET,
+//   YOUTUBE_REDIRECT_URI
+// } = process.env;
+
+// if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REDIRECT_URI) {
+//   throw new Error('Missing YouTube OAuth env variables');
 // }
 
+// const oauth2Client = new google.auth.OAuth2(
+//   YOUTUBE_CLIENT_ID,
+//   YOUTUBE_CLIENT_SECRET,
+//   YOUTUBE_REDIRECT_URI
+// );
+
 // export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-//   const { TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET, TIKTOK_REDIRECT_URI } = process.env;
+//   const code = (Array.isArray(req.query.code) ? req.query.code[0] : req.query.code) ?? '';
 
-  // const code = (Array.isArray(req.query.code) ? req.query.code[0] : req.query.code) ?? '';
-
-//   if (!TIKTOK_CLIENT_KEY || !TIKTOK_CLIENT_SECRET || !TIKTOK_REDIRECT_URI) {
-//     return res.status(500).json({ error: 'Missing required environment variables' });
+//   if (!code) {
+//     // Redirect to landing page with an error if no code is present
+//     return res.redirect('/landing?yt_error=no_code_provided');
 //   }
 
 //   try {
-//     const tokenResponse = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/x-www-form-urlencoded',
-//       },
-//       body: new URLSearchParams({
-//         client_key: TIKTOK_CLIENT_KEY,
-//         client_secret: TIKTOK_CLIENT_SECRET,
-//         code: code,
-//         grant_type: 'authorization_code',
-//         redirect_uri: TIKTOK_REDIRECT_URI,
-//       }),
-//     });
+//     const { tokens } = await oauth2Client.getToken(code);
+    
+//     // We extract the access token to send it back to the frontend dashboard
+//     const accessToken = tokens.access_token;
 
-//     if (!tokenResponse.ok) {
-//       throw new Error('Failed to exchange code for access token');
+//     if (!accessToken) {
+//         throw new Error("No access token returned from Google");
 //     }
 
-//     const data = await tokenResponse.json() as TokenResponse;
+//     // REDIRECT LOGIC:
+//     // This sends the user back to your landing page (/) 
+//     // and attaches the token so your SocialMediaDashboard can catch it.
+//     const redirectUrl = `/landing?yt_access_token=${encodeURIComponent(accessToken)}&yt_refresh_token=${encodeURIComponent(accessToken)}`;
+    
+//     return res.redirect(redirectUrl);
 
-//     const frontEndRedirect = `https://www.shadowmiraclerecords.com/tok?access_token=${encodeURIComponent(data.access_token)}`;
-//     res.redirect(307, frontEndRedirect);
-//     res.status(200).json({ data });
-
-//     // res.status(200).json(tokenData);
-
-//   } catch (error: unknown) {
-//     if (error instanceof Error) {
-//         res.status(500).json({ error: error.message });
-//     }
-//     else {
-//         res.status(500).json({ error: "Unknown exception occurred" });
-//     }
+//   } catch (err) {
+//     const message = err instanceof Error ? err.message : 'Unknown error';
+//     console.error('OAuth Error:', message);
+    
+//     // Redirect back with an error message in the URL
+//     return res.redirect(`/landing?yt_error=${encodeURIComponent(message)}`);
 //   }
 // }
 
+// pages/api/auth/callback/youtube.ts
 
-
-
-// pages/api/youtubeoauth.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
@@ -69,58 +68,44 @@ if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REDIRECT_URI) {
   throw new Error('Missing YouTube OAuth env variables');
 }
 
-const clientId = YOUTUBE_CLIENT_ID;
-const clientSecret = YOUTUBE_CLIENT_SECRET;
-const redirectUri = YOUTUBE_REDIRECT_URI;
-
-const oauth2Client = new google.auth.OAuth2(
-  clientId,
-  clientSecret,
-  redirectUri
-);
-
-interface TokenResponse {
-  access_token?: string;
-  refresh_token?: string;
-  scope?: string;
-  token_type?: string;
-  expiry_date?: number;
-}
-
-// export default async function handler(
-//   req: NextApiRequest,
-//   res: NextApiResponse<TokenResponse | ErrorResponse>
-// ): Promise<void> {
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
-  // const body = req.body as { code?: string | null | undefined };
-  // const rawCode = body.code;
-  // if (!rawCode || typeof rawCode !== 'string') {
-  //   res.status(400).json({ error: 'Missing or invalid code' });
-  //   return;
-  // }
-  // const code: string = rawCode;
+  // Use a fresh client for every request to avoid state issues
+  const oauth2Client = new google.auth.OAuth2(
+    YOUTUBE_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET,
+    YOUTUBE_REDIRECT_URI
+  );
 
   const code = (Array.isArray(req.query.code) ? req.query.code[0] : req.query.code) ?? '';
 
+  if (!code) {
+    return res.redirect('/landing?yt_error=no_code_provided');
+  }
+
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    const tokenInfo: TokenResponse = {
-      access_token: tokens.access_token || '',
-      refresh_token: tokens.refresh_token || '',
-      scope: tokens.scope,
-      token_type: tokens.token_type || '',
-      expiry_date: tokens.expiry_date || 0
-    };
-    console.log('!!!')
-    console.log(tokenInfo)
-    console.log('!!!')
-    res.status(200).json(tokenInfo);
-    return;
+    
+    const accessToken = tokens.access_token;
+    const refreshToken = tokens.refresh_token; // <--- The permanent token
+
+    if (!accessToken) {
+        throw new Error("No access token returned from Google");
+    }
+
+    // Start building the redirect URL
+    let redirectUrl = `/landing?yt_access_token=${encodeURIComponent(accessToken)}`;
+    
+    // ONLY append the refresh token if it exists. 
+    // Remember: Google only sends this the FIRST time the user consents.
+    if (refreshToken) {
+      redirectUrl += `&yt_refresh_token=${encodeURIComponent(refreshToken)}`;
+    }
+    
+    return res.redirect(redirectUrl);
+
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error during token exchange';
-    res.status(500).json({ error: message });
-    return;
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('OAuth Error:', message);
+    return res.redirect(`/landing?yt_error=${encodeURIComponent(message)}`);
   }
 }
