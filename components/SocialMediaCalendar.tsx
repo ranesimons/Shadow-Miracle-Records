@@ -172,31 +172,7 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
 
     setUploadingToYoutube(true);
 
-    // Inside your frontend component
-// const handleYoutubeUpload = async (videoData) => {
-//   const response = await fetch('/api/upload-youtube', {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({
-//       blobName: videoData.url,
-//       title: videoData.title,
-//       // Pass the token from your state or localStorage here
-//       refreshToken: youtubeRefreshToken, 
-//     }),
-//   });
-//   // ... handle response
-// };
-
     try {
-      // const response = await fetch('/api/upload-youtube', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     blobName,
-      //   }),
-      // });
 
       // Get the token stored during the OAuth process
       const savedRefreshToken = localStorage.getItem("yt_refresh_token");
@@ -268,8 +244,8 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
     }
   };
 
-  const handleUploadToFacebook = async (blobName: string) => {
-    if (!blobName) {
+  const handleUploadToFacebook = async (blobUrl: string) => {
+    if (!blobUrl) {
       console.log('Please provide all required fields')
       return;
     }
@@ -283,7 +259,7 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          blobName,
+          blobUrl,
         }),
       });
 

@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('^^^');
     }
 
-    const frontEndRedirect = `https://www.shadowmiraclerecords.com/fbook?access_token=${encodeURIComponent(data.access_token)}`;
+    const frontEndRedirect = `https://www.shadowmiraclerecords.com/landing?fb_access_token=${encodeURIComponent(data.access_token)}`;
     res.redirect(307, frontEndRedirect);
     res.status(200).json({ data });
 
@@ -69,5 +69,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     res.status(500).send('Failed to get access token');
   }
-  return NextResponse.redirect('https://www.shadowmiraclerecords.com/fbook');
+  return NextResponse.redirect('https://www.shadowmiraclerecords.com/landing');
 }
