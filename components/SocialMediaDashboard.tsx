@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import TiktokVideoList from "./TiktokVideoList";
 import TikTokAuthButton from "./TikTokAuthButton";
 import YouTubeAuthButton from "./YouTubeAuthButton";
+import YouTubeVideoList from "./YouTubeVideoList";
 import SocialMediaCalendar from "./SocialMediaCalendar";
+import FacebookVideoList from "./FacebookVideoList";
 import FacebookAuthButton from "./FacebookAuthButton";
-import Instagram from "./Instagram";
+import InstagramVideoList from "./InstagramVideoList";
 import InstagramAuthButton from "./InstagramAuthButton";
 
 export default function SocialMediaDashboard() {
@@ -18,12 +20,15 @@ export default function SocialMediaDashboard() {
   const [instagramAuthToken, setInstagramAuthToken] = useState<string | null>(null);
   // Unified loading state for the whole page
   const [loading, setLoading] = useState(true);
-  
+
   const [tiktokAuthError, setTiktokAuthError] = useState<string | null>(null);
   const [youtubeAuthError, setYoutubeAuthError] = useState<string | null>(null);
   const [facebookAuthError, setFacebookAuthError] = useState<string | null>(null);
   const [instagramAuthError, setInstagramAuthError] = useState<string | null>(null);
   const [showTiktokVideos, setShowTiktokVideos] = useState<boolean>(false);
+  const [showFacebookVideos, setShowFacebookVideos] = useState<boolean>(false);
+  const [showInstagramVideos, setShowInstagramVideos] = useState<boolean>(false);
+  const [showYouTubeVideos, setShowYouTubeVideos] = useState<boolean>(false);
 
   // 1. Initial Mount: Handle Browser-only logic
   useEffect(() => {
@@ -83,10 +88,16 @@ export default function SocialMediaDashboard() {
 
     // Process Instagram
     const igAccess = searchParams.get("ig_access_token");
+    const igUserId = searchParams.get("ig_user_id");
     if (igAccess) {
       setInstagramAuthToken(igAccess);
       localStorage.setItem("ig_access_token", igAccess);
       newParams.delete("ig_access_token");
+      urlChanged = true;
+    }
+    if (igUserId) {
+      localStorage.setItem("ig_user_id", igUserId);
+      newParams.delete("ig_user_id");
       urlChanged = true;
     }
 
@@ -141,35 +152,25 @@ export default function SocialMediaDashboard() {
           </button>
         )}
       </div>
-      
-      {/* TIKTOK SECTION */}
+
+      {/* authentication buttons for all services */}
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">TikTok</h2>
-        {tiktokAuthToken ? (
-          <div className="space-y-4">
-            <p className="text-green-500 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-              Connected
-            </p>
-            <SocialMediaCalendar tiktokAuthToken={tiktokAuthToken} />
-            <button 
-              onClick={() => setShowTiktokVideos(!showTiktokVideos)}
-              className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
-            >
-              {showTiktokVideos ? "Hide Videos" : "Show My TikTok Videos"}
-            </button>
-            {showTiktokVideos && <TiktokVideoList tiktokAuthToken={tiktokAuthToken} />}
-          </div>
-        ) : (
-          <div className="py-4 space-y-3">
-            <p className="text-gray-400 text-sm">Connect your TikTok account to manage videos and scheduling.</p>
-            <TikTokAuthButton />
-            {tiktokAuthError && <p className="text-red-500 text-sm italic">Error: {tiktokAuthError}</p>}
-          </div>
-        )}
+          {tiktokAuthToken ? (
+            <div className="space-y-4">
+              <p className="text-green-500 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                Connected
+              </p>
+            </div>
+          ) : (
+            <div className="py-4 space-y-3">
+              <p className="text-gray-400 text-sm">Connect your TikTok account to manage videos and scheduling.</p>
+              <TikTokAuthButton />
+              {tiktokAuthError && <p className="text-red-500 text-sm italic">Error: {tiktokAuthError}</p>}
+            </div>
+          )}
       </section>
-
-      {/* FACEBOOK SECTION */}
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">Facebook</h2>
         {facebookAuthToken ? (
@@ -188,8 +189,6 @@ export default function SocialMediaDashboard() {
           </div>
         )}
       </section>
-
-      {/* INSTAGRAM SECTION */}
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">Instagram</h2>
         {instagramAuthToken ? (
@@ -208,8 +207,6 @@ export default function SocialMediaDashboard() {
           </div>
         )}
       </section>
-
-      {/* YOUTUBE SECTION */}
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">YouTube</h2>
         {youtubeAuthToken ? (
@@ -228,6 +225,112 @@ export default function SocialMediaDashboard() {
           </div>
         )}
       </section>
-    </div>
+
+      {/* TIKTOK SECTION */}
+      <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+        {tiktokAuthToken ? (
+          <div className="space-y-4">
+            <SocialMediaCalendar tiktokAuthToken={tiktokAuthToken} />
+            <button 
+              onClick={() => setShowTiktokVideos(!showTiktokVideos)}
+              className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
+            >
+              {showTiktokVideos ? "Hide Videos" : "Show My TikTok Videos"}
+            </button>
+            {showTiktokVideos && <TiktokVideoList tiktokAuthToken={tiktokAuthToken} />}
+          </div>
+        ) : (
+          <div className="py-4 space-y-3">
+          </div>
+        )}
+      </section>
+
+    {/* FACEBOOK SECTION */}
+    <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+      {facebookAuthToken ? (
+        <div className="space-y-4">
+          <button 
+            onClick={() => setShowTiktokVideos(!showFacebookVideos)}
+            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
+          >
+            {showFacebookVideos ? "Hide Videos" : "Show My Facebook Videos"}
+          </button>
+          {showFacebookVideos && <FacebookVideoList facebookAuthToken={facebookAuthToken} />}
+        </div>
+      ) : (
+        <div className="py-4 space-y-3">
+        </div>
+      )}
+    </section>
+
+    {/* INSTAGRAM SECTION */}
+    <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+      {instagramAuthToken ? (
+        <div className="space-y-4">
+          <button 
+            onClick={() => setShowInstagramVideos(!showInstagramVideos)}
+            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
+          >
+            {showInstagramVideos ? "Hide Videos" : "Show My Instagram Videos"}
+          </button>
+          {showInstagramVideos && <InstagramVideoList instagramAuthToken={instagramAuthToken} />}
+        </div>
+      ) : (
+        <div className="py-4 space-y-3">
+        </div>
+      )}
+    </section>
+
+    {/* YOUTUBE SECTION */}
+    <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+      {youtubeAuthToken ? (
+        <div className="space-y-4">
+          <button 
+            onClick={() => setShowYouTubeVideos(!showYouTubeVideos)}
+            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
+          >
+            {showYouTubeVideos ? "Hide Videos" : "Show My YouTube Videos"}
+          </button>
+          {showYouTubeVideos && <YouTubeVideoList youtubeAuthToken={youtubeAuthToken} />}
+        </div>
+      ) : (
+        <div className="py-4 space-y-3">
+        </div>
+      )}
+    </section>
+
+    {/* VIDEO LISTS SECTION - Displayed in columns when shown */}
+    {(showTiktokVideos || showFacebookVideos || showInstagramVideos || showYouTubeVideos) && (
+      <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+        <h2 className="text-xl font-bold mb-4 text-white">Video Lists</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {showTiktokVideos && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">TikTok Videos</h3>
+              <TiktokVideoList tiktokAuthToken={tiktokAuthToken!} />
+            </div>
+          )}
+          {showFacebookVideos && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">Facebook Videos</h3>
+              <FacebookVideoList facebookAuthToken={facebookAuthToken!} />
+            </div>
+          )}
+          {showInstagramVideos && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">Instagram Videos</h3>
+              <InstagramVideoList instagramAuthToken={instagramAuthToken!} />
+            </div>
+          )}
+          {showYouTubeVideos && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">YouTube Videos</h3>
+              <YouTubeVideoList youtubeAuthToken={youtubeAuthToken!} />
+            </div>
+          )}
+        </div>
+      </section>
+    )}
+  </div>
   );
 }

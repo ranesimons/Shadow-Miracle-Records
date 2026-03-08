@@ -310,13 +310,23 @@ export default function VideoUploadByDay() {
     setUploadingToInstagram(true);
 
     try {
+      const igAccessToken = localStorage.getItem("ig_access_token");
+      const igUserId = localStorage.getItem("ig_user_id");
+
+      if (!igAccessToken || !igUserId) {
+        throw new Error('Instagram not authenticated or missing user ID');
+      }
+
       const response = await fetch('/api/upload-instagram', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          blobName,
+          blobUrl: blobName,
+          accessToken: igAccessToken,
+          igUserId: igUserId,
+          mediaType: 'REELS',
         }),
       });
 

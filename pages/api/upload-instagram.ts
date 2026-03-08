@@ -26,22 +26,25 @@ export default async function handler(
   }
 
   try {
-    const { blobUrl, caption = '', mediaType = 'VIDEO', shareToFeed = false } = req.body as {
+    const { blobUrl, caption = '', mediaType = 'VIDEO', shareToFeed = false, igUserId, accessToken } = req.body as {
       blobUrl?: string;
       caption?: string;
       mediaType?: 'VIDEO' | 'REELS' | 'STORIES';
       shareToFeed?: boolean;
+      igUserId?: string;
+      accessToken?: string;
     };
 
     if (!blobUrl) {
       return res.status(400).json({ success: false, error: 'Missing blobUrl' });
     }
 
-    const igUserId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
-    const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN; // or IG-user token with publish permissions
+    if (!igUserId) {
+      return res.status(400).json({ success: false, error: 'Missing igUserId' });
+    }
 
-    if (!igUserId || !accessToken) {
-      return res.status(500).json({ success: false, error: 'Server misconfigured: missing IG account ID or access token' });
+    if (!accessToken) {
+      return res.status(400).json({ success: false, error: 'Missing accessToken' });
     }
 
     // 1) Create media container
