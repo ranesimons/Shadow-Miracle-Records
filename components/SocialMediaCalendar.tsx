@@ -3,6 +3,8 @@
 
 import { useEffect, useState, ChangeEvent } from "react";
 
+import InstagramUploader from "./InstagramUploader";
+
 // Define the Props interface
 interface SocialMediaCalendarProps {
   tiktokAuthToken: string; // The Landing Page passes this in
@@ -386,9 +388,15 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
                     </button>
                   </div>
                   <div>
-                    <button onClick={() => handleUploadToInstagram(state.uploadedUrl)} disabled={uploadingToInstagram}>
+                    {/* <button onClick={() => handleUploadToInstagram(state.uploadedUrl)} disabled={uploadingToInstagram}>
                         {uploadingToInstagram ? 'Uploading...' : 'Upload to Instagram'}
-                    </button>
+                    </button> */}
+                    {/* <InstagramUploader /> */}
+                    <InstagramUploader 
+                      blobUrl={state.uploadedUrl}   // Or wherever you store the Azure link
+                      igAccessToken={localStorage.getItem("ig_access_token") ?? ''}   // Your long-lived token variable
+                      igUserId={localStorage.getItem("ig_user_id") ?? ''}           // Your Instagram Business ID variable
+                    />
                   </div>
                   <div>
                     <button onClick={() => handleUploadToTwitter(state.uploadedUrl)} disabled={uploadingToTwitter}>

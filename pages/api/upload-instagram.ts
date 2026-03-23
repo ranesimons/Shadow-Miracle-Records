@@ -1,110 +1,72 @@
 // pages/api/upload-instagram.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import fetch from 'node-fetch';
 
-interface IGContainerResponse {
-  id: string;
-}
-
-interface IGPublishResponse {
-  id: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  mediaId?: string;
-  error?: string;
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  console.log('req.body:', req.body);
+
+  const { creationId, igUserId, accessToken } = req.body;
+
+  console.log('creationId:', creationId);
+  console.log('igUserId:', igUserId);
+  console.log('accessToken:', accessToken);
+
+  // 1. Validation
+  if (!creationId || !accessToken || !igUserId) {
+    return res.status(400).json({ error: 'Missing required fields: creationId, accessToken, or igUserId' });
   }
 
   try {
-    const { blobUrl, caption = '', mediaType = 'VIDEO', shareToFeed = false, igUserId, accessToken } = req.body as {
-      blobUrl?: string;
-      caption?: string;
-      mediaType?: 'VIDEO' | 'REELS' | 'STORIES';
-      shareToFeed?: boolean;
-      igUserId?: string;
-      accessToken?: string;
-    };
 
-    if (!blobUrl) {
-      return res.status(400).json({ success: false, error: 'Missing blobUrl' });
+    // const containerData = await containerResponse.json();
+
+    // console.log('containerData:', containerData);
+
+    // if (containerData.error) {
+    //   console.error('Container Error:', containerData.error);
+    //   return res.status(400).json({ step: 'container_creation', ...containerData.error });
+    // }
+
+    // const creationId = containerData.id;
+
+    // --- STEP 2: PUBLISH THE CONTAINER ---
+    // Instagram needs a moment to process the image; for production, 
+    // you'd check the status, but for a simple script, we call publish immediately.
+    const publishResponse = await fetch(
+      `https://graph.instagram.com/v22.0/${igUserId}/media_publish`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          creation_id: creationId,
+        }),
+      }
+    );
+
+    const publishData = await publishResponse.json();
+
+    console.log('publishData:', publishData);
+
+    if (publishData.error) {
+      console.error('Publish Error:', publishData.error);
+      return res.status(400).json({ step: 'media_publish', ...publishData.error });
     }
 
-    if (!igUserId) {
-      return res.status(400).json({ success: false, error: 'Missing igUserId' });
-    }
-
-    if (!accessToken) {
-      return res.status(400).json({ success: false, error: 'Missing accessToken' });
-    }
-
-    // 1) Create media container
-    const containerUrl = `https://graph.facebook.com/v16.0/${igUserId}/media`;
-    const containerParams = new URLSearchParams();
-    containerParams.append('media_type', mediaType);
-    containerParams.append(mediaType === 'VIDEO' ? 'video_url' : 'video_url', blobUrl);
-    containerParams.append('caption', caption);
-    if (mediaType === 'REELS') {
-      containerParams.append('share_to_feed', shareToFeed ? 'true' : 'false');
-    }
-    containerParams.append('access_token', accessToken);
-
-    const containerRes = await fetch(containerUrl, {
-      method: 'POST',
-      body: containerParams,
+    // SUCCESS!
+    return res.status(200).json({
+      success: true,
+      postId: publishData.id,
+      message: 'Post successfully uploaded to Instagram',
     });
 
-    const containerJson = await containerRes.json();
-    if (!containerRes.ok) {
-      throw new Error(`IG container creation failed: ${JSON.stringify(containerJson)}`);
-    }
-
-    const containerData = containerJson as IGContainerResponse;
-    const creationId = containerData.id;
-    if (!creationId) {
-      throw new Error(`Invalid container response: ${JSON.stringify(containerJson)}`);
-    }
-
-    // 2) (Optionally) Wait / poll until video processing is done
-    // Some videos need processing before they can be published — you might need to poll:
-    // GET https://graph.facebook.com/v16.0/{creationId}?fields=status_code&access_token=...
-    // until status_code === 'FINISHED'
-
-    // 3) Publish the container
-    const publishUrl = `https://graph.facebook.com/v16.0/${igUserId}/media_publish`;
-    const publishParams = new URLSearchParams();
-    publishParams.append('creation_id', creationId);
-    publishParams.append('access_token', accessToken);
-
-    const publishRes = await fetch(publishUrl, {
-      method: 'POST',
-      body: publishParams,
-    });
-
-    const publishJson = await publishRes.json();
-    if (!publishRes.ok) {
-      throw new Error(`IG publish failed: ${JSON.stringify(publishJson)}`);
-    }
-
-    const publishData = publishJson as IGPublishResponse;
-    const mediaId = publishData.id;
-    if (!mediaId) {
-      throw new Error(`Invalid publish response: ${JSON.stringify(publishJson)}`);
-    }
-
-    return res.status(200).json({ success: true, mediaId });
-  } catch (err: unknown) {
-    console.error('Upload to Instagram Error:', err);
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return res.status(500).json({ success: false, error: message });
+  } catch (error) {
+    console.error('Upload Process Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
