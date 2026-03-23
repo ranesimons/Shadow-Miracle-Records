@@ -5,10 +5,10 @@
 import React from 'react';
 
 const InstagramAuthButton = () => {
-  const handleBusiness = () => {
-    // business flow uses Facebook endpoint
-    window.location.href = '/api/auth/facebook';
-  };
+  // const handleBusiness = () => {
+  //   // business flow uses Facebook endpoint
+  //   window.location.href = '/api/auth/facebook';
+  // };
 
   const handlePersonal = () => {
     window.location.href = '/api/auth/instagram-personal';
@@ -26,9 +26,9 @@ const InstagramAuthButton = () => {
 
   return (
     <div>
-      <button onClick={handleBusiness} style={buttonStyle}>
+      {/* <button onClick={handleBusiness} style={buttonStyle}>
         Instagram Business
-      </button>
+      </button> */}
       <button onClick={handlePersonal} style={buttonStyle}>
         Instagram Personal
       </button>

@@ -1,15 +1,12 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import TiktokVideoList from "./TiktokVideoList";
 import TikTokAuthButton from "./TikTokAuthButton";
 import YouTubeAuthButton from "./YouTubeAuthButton";
-import YouTubeVideoList from "./YouTubeVideoList";
 import SocialMediaCalendar from "./SocialMediaCalendar";
-import FacebookVideoList from "./FacebookVideoList";
 import FacebookAuthButton from "./FacebookAuthButton";
-import InstagramVideoList from "./InstagramVideoList";
 import InstagramAuthButton from "./InstagramAuthButton";
+import TotalViewCount from "./All";
 
 export default function SocialMediaDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -226,18 +223,17 @@ export default function SocialMediaDashboard() {
         )}
       </section>
 
-      {/* TIKTOK SECTION */}
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-        {tiktokAuthToken ? (
+        {(tiktokAuthToken && youtubeAuthToken && facebookAuthToken && instagramAuthToken) ? (
           <div className="space-y-4">
             <SocialMediaCalendar tiktokAuthToken={tiktokAuthToken} />
-            <button 
+            {/* <button 
               onClick={() => setShowTiktokVideos(!showTiktokVideos)}
               className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
             >
               {showTiktokVideos ? "Hide Videos" : "Show My TikTok Videos"}
             </button>
-            {showTiktokVideos && <TiktokVideoList tiktokAuthToken={tiktokAuthToken} />}
+            {showTiktokVideos && <TiktokVideoList tiktokAuthToken={tiktokAuthToken} />} */}
           </div>
         ) : (
           <div className="py-4 space-y-3">
@@ -245,92 +241,27 @@ export default function SocialMediaDashboard() {
         )}
       </section>
 
-    {/* FACEBOOK SECTION */}
     <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-      {facebookAuthToken ? (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setShowTiktokVideos(!showFacebookVideos)}
-            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
-          >
-            {showFacebookVideos ? "Hide Videos" : "Show My Facebook Videos"}
-          </button>
-          {showFacebookVideos && <FacebookVideoList facebookAuthToken={facebookAuthToken} />}
-        </div>
-      ) : (
-        <div className="py-4 space-y-3">
-        </div>
-      )}
-    </section>
-
-    {/* INSTAGRAM SECTION */}
-    <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-      {instagramAuthToken ? (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setShowInstagramVideos(!showInstagramVideos)}
-            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
-          >
-            {showInstagramVideos ? "Hide Videos" : "Show My Instagram Videos"}
-          </button>
-          {showInstagramVideos && <InstagramVideoList instagramAuthToken={instagramAuthToken} />}
-        </div>
-      ) : (
-        <div className="py-4 space-y-3">
-        </div>
-      )}
-    </section>
-
-    {/* YOUTUBE SECTION */}
-    <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-      {youtubeAuthToken ? (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setShowYouTubeVideos(!showYouTubeVideos)}
-            className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
-          >
-            {showYouTubeVideos ? "Hide Videos" : "Show My YouTube Videos"}
-          </button>
-          {showYouTubeVideos && <YouTubeVideoList youtubeAuthToken={youtubeAuthToken} />}
-        </div>
-      ) : (
-        <div className="py-4 space-y-3">
-        </div>
-      )}
+      <div className="space-y-4">
+        <button 
+          onClick={() => setShowYouTubeVideos(!showYouTubeVideos)}
+          className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
+        >
+          {showYouTubeVideos ? "Hide View Counts" : "Show View Counts"}
+        </button>
+        {showYouTubeVideos && <TotalViewCount />}
+      </div>
     </section>
 
     {/* VIDEO LISTS SECTION - Displayed in columns when shown */}
-    {(showTiktokVideos || showFacebookVideos || showInstagramVideos || showYouTubeVideos) && (
+    {/* {(showTiktokVideos || showFacebookVideos || showInstagramVideos || showYouTubeVideos) && (
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">Video Lists</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {showTiktokVideos && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">TikTok Videos</h3>
-              <TiktokVideoList tiktokAuthToken={tiktokAuthToken!} />
-            </div>
-          )}
-          {showFacebookVideos && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">Facebook Videos</h3>
-              <FacebookVideoList facebookAuthToken={facebookAuthToken!} />
-            </div>
-          )}
-          {showInstagramVideos && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">Instagram Videos</h3>
-              <InstagramVideoList instagramAuthToken={instagramAuthToken!} />
-            </div>
-          )}
-          {showYouTubeVideos && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">YouTube Videos</h3>
-              <YouTubeVideoList youtubeAuthToken={youtubeAuthToken!} />
-            </div>
-          )}
+          <TotalViewCount />
         </div>
       </section>
-    )}
+    )} */}
   </div>
   );
 }
