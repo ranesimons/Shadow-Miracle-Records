@@ -1,4 +1,4 @@
-// // pages/api/auth/instagram-personal.ts
+// pages/api/auth/instagram-personal.ts
 
 import { NextApiRequest, NextApiResponse } from 'next';
 

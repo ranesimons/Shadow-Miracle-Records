@@ -12,7 +12,8 @@
     "noEmit": true,
     "typeRoots": [
       "./node_modules/@types",
-      "./src/types"
+      "./src/types",
+      "./types"
     ],
     "esModuleInterop": true,
     "module": "esnext",

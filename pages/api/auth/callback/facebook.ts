@@ -6,24 +6,6 @@ interface TokenResponse {
   access_token: string;
 }
 
-interface PageData {
-  id: string;
-  name: string;
-  // other fields
-}
-
-interface PagesResponse {
-  data: PageData[];
-}
-
-interface InstagramAccount {
-  id: string;
-}
-
-interface PageDetails {
-  instagram_business_account?: InstagramAccount;
-}
-
 function isTokenResponse(data: unknown): data is TokenResponse {
   return (
     typeof data === 'object' &&
@@ -76,36 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('^^^');
     }
 
-    // Get Instagram user ID from Facebook pages
-    let igUserId = process.env.IG_USER_ID || '';
-    console.log('Initial igUserId from env:', igUserId);
-    try {
-      const pagesResponse = await fetch(`https://graph.facebook.com/${FB_OAUTH_VERSION}/me/accounts?access_token=${data.access_token}`);
-      const pagesData = await pagesResponse.json() as PagesResponse;
-      console.log('Pages data:', pagesData);
-      if (pagesData.data && pagesData.data.length > 0) {
-        const pageId = pagesData.data[0].id; // Assume first page
-        console.log('Using page ID:', pageId);
-        const igResponse = await fetch(`https://graph.facebook.com/${FB_OAUTH_VERSION}/${pageId}?fields=instagram_business_account&access_token=${data.access_token}`);
-        const igData = await igResponse.json() as PageDetails;
-        console.log('Instagram data for page:', igData);
-        if (igData.instagram_business_account && igData.instagram_business_account.id) {
-          igUserId = igData.instagram_business_account.id;
-          console.log('Set igUserId from API:', igUserId);
-        } else {
-          console.log('No Instagram business account found for this page');
-        }
-      } else {
-        console.log('No pages found for this user');
-      }
-    } catch (error) {
-      console.error('Error fetching Instagram user ID:', error);
-      // Fall back to env var
-    }
-
-    const frontEndRedirect = `https://www.shadowmiraclerecords.com/landing?fb_access_token=${encodeURIComponent(data.access_token)}&ig_access_token=${encodeURIComponent(data.access_token)}&ig_user_id=${encodeURIComponent(igUserId)}`;
+    const frontEndRedirect = `https://www.shadowmiraclerecords.com/landing?fb_access_token=${encodeURIComponent(data.access_token)}`;
     console.log('ig access token:', data.access_token);
-    console.log('ig user id:', igUserId);
     res.redirect(307, frontEndRedirect);
 
   } catch (err: unknown) {

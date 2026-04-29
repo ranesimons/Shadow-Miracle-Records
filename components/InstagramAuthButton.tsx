@@ -26,11 +26,8 @@ const InstagramAuthButton = () => {
 
   return (
     <div>
-      {/* <button onClick={handleBusiness} style={buttonStyle}>
-        Instagram Business
-      </button> */}
       <button onClick={handlePersonal} style={buttonStyle}>
-        Instagram Personal
+        Authenticate With Instagram
       </button>
     </div>
   );

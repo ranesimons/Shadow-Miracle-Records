@@ -22,10 +22,7 @@ export default function SocialMediaDashboard() {
   const [youtubeAuthError, setYoutubeAuthError] = useState<string | null>(null);
   const [facebookAuthError, setFacebookAuthError] = useState<string | null>(null);
   const [instagramAuthError, setInstagramAuthError] = useState<string | null>(null);
-  const [showTiktokVideos, setShowTiktokVideos] = useState<boolean>(false);
-  const [showFacebookVideos, setShowFacebookVideos] = useState<boolean>(false);
-  const [showInstagramVideos, setShowInstagramVideos] = useState<boolean>(false);
-  const [showYouTubeVideos, setShowYouTubeVideos] = useState<boolean>(false);
+  const [showAllVideos, setshowAllVideos] = useState<boolean>(false);
 
   // 1. Initial Mount: Handle Browser-only logic
   useEffect(() => {
@@ -227,13 +224,6 @@ export default function SocialMediaDashboard() {
         {(tiktokAuthToken && youtubeAuthToken && facebookAuthToken && instagramAuthToken) ? (
           <div className="space-y-4">
             <SocialMediaCalendar tiktokAuthToken={tiktokAuthToken} />
-            {/* <button 
-              onClick={() => setShowTiktokVideos(!showTiktokVideos)}
-              className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
-            >
-              {showTiktokVideos ? "Hide Videos" : "Show My TikTok Videos"}
-            </button>
-            {showTiktokVideos && <TiktokVideoList tiktokAuthToken={tiktokAuthToken} />} */}
           </div>
         ) : (
           <div className="py-4 space-y-3">
@@ -244,24 +234,14 @@ export default function SocialMediaDashboard() {
     <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
       <div className="space-y-4">
         <button 
-          onClick={() => setShowYouTubeVideos(!showYouTubeVideos)}
+          onClick={() => setshowAllVideos(!showAllVideos)}
           className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition w-full md:w-auto"
         >
-          {showYouTubeVideos ? "Hide View Counts" : "Show View Counts"}
+          {showAllVideos ? "Hide View Counts" : "Show View Counts"}
         </button>
-        {showYouTubeVideos && <TotalViewCount />}
+        {showAllVideos && <TotalViewCount />}
       </div>
     </section>
-
-    {/* VIDEO LISTS SECTION - Displayed in columns when shown */}
-    {/* {(showTiktokVideos || showFacebookVideos || showInstagramVideos || showYouTubeVideos) && (
-      <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-        <h2 className="text-xl font-bold mb-4 text-white">Video Lists</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <TotalViewCount />
-        </div>
-      </section>
-    )} */}
   </div>
   );
 }
