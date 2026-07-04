@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function TermsOfService() {
@@ -6,10 +7,17 @@ export default function TermsOfService() {
     <>
       <Head>
         <title>Shadow Miracle Records Terms of Service</title>
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '48px 24px', fontFamily: 'Georgia, serif', color: '#111', lineHeight: '1.8' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+          <Image src="/smr.png" alt="Shadow Miracle Records" width={48} height={48} />
+          <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.03em' }}>Shadow Miracle Records</span>
+        </div>
+
         <p style={{ marginBottom: '8px' }}>
-          <Link href="/" style={{ color: '#555', fontSize: '0.9rem', textDecoration: 'none' }}>← Shadow Miracle Records</Link>
+          <Link href="/" style={{ color: '#555', fontSize: '0.9rem', textDecoration: 'none' }}>← Home</Link>
         </p>
         <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Shadow Miracle Records Terms of Service</h1>
         <p style={{ color: '#555', marginBottom: '32px' }}>Last updated: May 9, 2026</p>
