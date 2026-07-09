@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import SocialMediaDashboard from "@/components/SocialMediaDashboard";
 
 export default function Home() {
   return (
@@ -21,66 +22,34 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section style={{ textAlign: "center", padding: "96px 24px 80px", borderBottom: "1px solid #e5e5e5" }}>
+      <section style={{ textAlign: "center", padding: "64px 24px 48px", borderBottom: "1px solid #e5e5e5" }}>
         <Image
           className="Smrlogo"
           src="/smr.png"
           alt="Shadow Miracle Records"
           width={100}
           height={100}
-          style={{ marginBottom: "32px" }}
+          style={{ marginBottom: "24px" }}
         />
-        <h1 style={{ fontSize: "2.8rem", fontWeight: 700, marginBottom: "16px", lineHeight: 1.2 }}>
+        <h1 style={{ fontSize: "2.4rem", fontWeight: 700, marginBottom: "12px", lineHeight: 1.2 }}>
           Shadow Miracle Records
         </h1>
-        <p style={{ fontSize: "1.1rem", color: "#555", maxWidth: "520px", margin: "0 auto 40px", lineHeight: 1.7 }}>
+        <p style={{ fontSize: "1rem", color: "#555", maxWidth: "520px", margin: "0 auto 24px", lineHeight: 1.7 }}>
           An independent music label developing and distributing original music across all major platforms.
         </p>
         <a
           href="https://ranesimons.streetteam.fm/join"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ display: "inline-block", backgroundColor: "#111", color: "#fff", padding: "14px 36px", borderRadius: "9999px", fontWeight: 600, textDecoration: "none", fontSize: "1rem" }}
+          style={{ display: "inline-block", backgroundColor: "#111", color: "#fff", padding: "12px 32px", borderRadius: "9999px", fontWeight: 600, textDecoration: "none", fontSize: "0.95rem" }}
         >
           Join the Community
         </a>
       </section>
 
-      {/* Features */}
-      <section style={{ maxWidth: "960px", margin: "0 auto", padding: "80px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "48px" }}>
-        <div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "12px" }}>Artist Roster</h2>
-          <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "16px" }}>
-            Discover the artists signed to Shadow Miracle Records and track their chart performance across Billboard charts.
-          </p>
-          <Link href="/artists" style={{ color: "#111", fontWeight: 600, textDecoration: "underline" }}>View Artists →</Link>
-        </div>
-        <div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "12px" }}>Billboard Charts</h2>
-          <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "16px" }}>
-            Search Billboard chart history by song or artist. Track placements across multiple chart categories over time.
-          </p>
-          <Link href="/track" style={{ color: "#111", fontWeight: 600, textDecoration: "underline" }}>Search Charts →</Link>
-        </div>
-        <div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "12px" }}>Social Media</h2>
-          <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "16px" }}>
-            Follow Shadow Miracle Records on TikTok, YouTube, Instagram, and Facebook for new music, updates, and behind-the-scenes content.
-          </p>
-          <a href="https://ranesimons.streetteam.fm/join" target="_blank" rel="noopener noreferrer" style={{ color: "#111", fontWeight: 600, textDecoration: "underline" }}>Follow Us →</a>
-        </div>
-      </section>
-
-      {/* About */}
-      <section style={{ backgroundColor: "#f9f9f9", borderTop: "1px solid #e5e5e5", borderBottom: "1px solid #e5e5e5", padding: "80px 24px", textAlign: "center" }}>
-        <div style={{ maxWidth: "640px", margin: "0 auto" }}>
-          <h2 style={{ fontSize: "1.6rem", fontWeight: 700, marginBottom: "16px" }}>About the Label</h2>
-          <p style={{ color: "#555", lineHeight: 1.8 }}>
-            Shadow Miracle Records is an independent music label focused on discovering and elevating original artists.
-            We manage content distribution across TikTok, YouTube, Instagram, and Facebook, and track chart performance
-            to help our artists grow their audience and reach.
-          </p>
-        </div>
+      {/* Social Media Dashboard */}
+      <section style={{ borderBottom: "1px solid #e5e5e5" }}>
+        <SocialMediaDashboard />
       </section>
 
       {/* Footer */}
