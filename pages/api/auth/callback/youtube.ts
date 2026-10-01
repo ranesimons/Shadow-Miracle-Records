@@ -37,15 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw new Error("No access token returned from Google");
     }
 
-    // Start building the redirect URL
-    let redirectUrl = `/landing?yt_access_token=${encodeURIComponent(accessToken)}`;
-    
-    // ONLY append the refresh token if it exists. 
-    // Remember: Google only sends this the FIRST time the user consents.
+    let redirectUrl = `/playlist?yt_access_token=${encodeURIComponent(accessToken)}`;
     if (refreshToken) {
       redirectUrl += `&yt_refresh_token=${encodeURIComponent(refreshToken)}`;
     }
-    
     return res.redirect(redirectUrl);
 
   } catch (err) {

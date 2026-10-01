@@ -8,11 +8,11 @@ export const authOptions: NextAuthOptions = {
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      // GitHub now returns an `iss` param on the callback; openid-client rejects it unless an issuer is set
+      issuer: "https://github.com/login/oauth",
     }),
-    // add more providers if you like
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  // optionally add callbacks, session config, pages override, etc.
 };
 
 export default NextAuth(authOptions);

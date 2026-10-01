@@ -52,6 +52,11 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
 
+  const secret = req.headers['x-api-secret'] ?? req.body?.secret;
+  if (!secret || secret !== process.env.BOARD_API_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   // Extract token from body
   const { genre, weeks } = req.body as { genre?: string, weeks?: string };
 

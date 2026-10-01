@@ -13,7 +13,9 @@ if (!YOUTUBE_CLIENT_ID || !YOUTUBE_REDIRECT_URI) {
 const clientId = YOUTUBE_CLIENT_ID;
 const redirectUri = YOUTUBE_REDIRECT_URI;
 const SCOPES = [
-  'https://www.googleapis.com/auth/youtube.upload'
+  'https://www.googleapis.com/auth/youtube.upload',
+  'https://www.googleapis.com/auth/youtube',          // playlist create/manage
+  'https://www.googleapis.com/auth/youtube.readonly', // search
 ];
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

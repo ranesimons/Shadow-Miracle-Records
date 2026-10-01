@@ -165,7 +165,7 @@ export default function SocialMediaDashboard() {
             </div>
           )}
       </section>
-      <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
+      {/* <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
         <h2 className="text-xl font-bold mb-4 text-white">Facebook</h2>
         {facebookAuthToken ? (
           <div className="space-y-4">
@@ -218,10 +218,10 @@ export default function SocialMediaDashboard() {
             {youtubeAuthError && <p className="text-red-500 text-sm italic">Error: {youtubeAuthError}</p>}
           </div>
         )}
-      </section>
+      </section> */}
 
       <section className="p-6 border border-gray-800 rounded-lg bg-zinc-900/50">
-        {(tiktokAuthToken && youtubeAuthToken && facebookAuthToken && instagramAuthToken) ? (
+        {tiktokAuthToken ? (
           <div className="space-y-4">
             <SocialMediaCalendar tiktokAuthToken={tiktokAuthToken} />
           </div>

@@ -2,6 +2,14 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
+import type { CreatorInfo } from "../pages/api/tiktok-creator-info";
+
+const PRIVACY_LABELS: Record<string, string> = {
+  PUBLIC_TO_EVERYONE: 'Everyone',
+  MUTUAL_FOLLOW_FRIENDS: 'Friends',
+  FOLLOWER_OF_CREATOR: 'Followers',
+  SELF_ONLY: 'Only me',
+};
 
 // Define the Props interface
 interface SocialMediaCalendarProps {
@@ -26,7 +34,10 @@ type UploadTargets = {
 type TikTokSettings = {
   title: string;
   description: string;
-  privacyLevel: 'PUBLIC_TO_EVERYONE' | 'MUTUAL_FOLLOW_FRIENDS' | 'FOLLOWER_OF_CREATOR' | 'SELF_ONLY';
+  privacyLevel: '' | 'PUBLIC_TO_EVERYONE' | 'MUTUAL_FOLLOW_FRIENDS' | 'FOLLOWER_OF_CREATOR' | 'SELF_ONLY';
+  allowComment: boolean;
+  allowDuet: boolean;
+  allowStitch: boolean;
   discloseContent: boolean;
   brandContentToggle: boolean;
   brandOrganicToggle: boolean;
@@ -72,11 +83,11 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
   const [uploadTargets, setUploadTargets] = useState<UploadTargets[]>(
     () =>
       Array.from({ length: daysInMonth }, () => ({
-        youtube: true,
+        youtube: false,
         tiktok: true,
-        facebook: true,
-        instagram: true,
-        twitter: true,
+        facebook: false,
+        instagram: false,
+        twitter: false,
       }))
   );
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatusMap[]>(
@@ -94,12 +105,34 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
       Array.from({ length: daysInMonth }, () => ({
         title: '',
         description: '',
-        privacyLevel: 'PUBLIC_TO_EVERYONE',
+        privacyLevel: '',
+        allowComment: false,
+        allowDuet: false,
+        allowStitch: false,
         discloseContent: false,
         brandContentToggle: false,
         brandOrganicToggle: false,
       }))
   );
+  const [creatorInfo, setCreatorInfo] = useState<CreatorInfo | null>(null);
+  const [creatorError, setCreatorError] = useState<string | null>(null);
+  const [videoDurations, setVideoDurations] = useState<Record<number, number>>({});
+  const [tiktokNotice, setTiktokNotice] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!tiktokAuthToken) return;
+    fetch('/api/tiktok-creator-info', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tiktokAuthToken}` },
+    })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error ?? 'Could not load your TikTok account');
+        setCreatorInfo(data);
+        setCreatorError(null);
+      })
+      .catch((e) => setCreatorError(e instanceof Error ? e.message : 'Could not load your TikTok account'));
+  }, [tiktokAuthToken]);
 
   const updateTikTokSetting = <K extends keyof TikTokSettings>(
     dayIndex: number,
@@ -313,12 +346,32 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
       throw new Error(message);
     }
 
+    if (!creatorInfo) {
+      const message = creatorError ?? 'Your TikTok account is still loading. Please try again in a moment.';
+      updateUploadStatus(dayIndex, 'tiktok', 'error', message);
+      throw new Error(message);
+    }
+
+    if (!settings.privacyLevel) {
+      const message = 'Please choose who can view this video.';
+      updateUploadStatus(dayIndex, 'tiktok', 'error', message);
+      throw new Error(message);
+    }
+
+    const duration = videoDurations[dayIndex];
+    if (duration && duration > creatorInfo.max_video_post_duration_sec) {
+      const message = `This video is ${Math.round(duration)}s long. Your TikTok account can post videos up to ${creatorInfo.max_video_post_duration_sec}s.`;
+      updateUploadStatus(dayIndex, 'tiktok', 'error', message);
+      throw new Error(message);
+    }
+
     if (settings.discloseContent && !settings.brandContentToggle && !settings.brandOrganicToggle) {
       const message = 'Please select at least one content disclosure option (Your Brand or Branded Content).';
       updateUploadStatus(dayIndex, 'tiktok', 'error', message);
       throw new Error(message);
     }
 
+    setTiktokNotice((prev) => ({ ...prev, [dayIndex]: '' }));
     updateUploadStatus(dayIndex, 'tiktok', 'loading');
     setUploadingToTiktok(true);
 
@@ -334,17 +387,23 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
           title: settings.title.trim(),
           description: settings.description.trim(),
           privacyLevel: settings.privacyLevel,
+          allowComment: settings.allowComment,
+          allowDuet: settings.allowDuet,
+          allowStitch: settings.allowStitch,
           brandContentToggle: settings.brandContentToggle,
           brandOrganicToggle: settings.brandOrganicToggle,
         }),
       });
 
+      const data: { success: boolean; publishId?: string; error?: string } = await response.json();
       if (!response.ok) {
-        throw new Error('Failed to upload video to TikTok');
+        throw new Error(data.error ?? 'Failed to upload video to TikTok');
       }
-
-      const data: { success: boolean; publishId?: string } = await response.json();
       updateUploadStatus(dayIndex, 'tiktok', 'success');
+      setTiktokNotice((prev) => ({
+        ...prev,
+        [dayIndex]: 'Posted! TikTok is processing your video. It may take a few minutes to appear on your profile.',
+      }));
       return data.publishId;
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Upload failed';
@@ -618,193 +677,348 @@ const SocialMediaCalendar: React.FC<SocialMediaCalendarProps> = ({ tiktokAuthTok
     }
   };
 
-  return (
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthName = MONTH_NAMES[monthZeroBased];
 
+  const fieldStyle: React.CSSProperties = {
+    background: '#0a0a0c',
+    color: '#e4e4e7',
+    border: '1px solid #27272a',
+    borderRadius: '6px',
+    padding: '6px 8px',
+    fontSize: '0.73rem',
+    width: '100%',
+    boxSizing: 'border-box',
+    outline: 'none',
+  };
+
+  return (
     <div style={{ color: "#FFFFFF" }}>
 
-      <h1>
-        Upload Video by Day — {year}-{(monthZeroBased + 1).toString().padStart(2, "0")}
-      </h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "12px" }}>
-        {states.map((state, idx) => {
-          const day = idx + 1;
-          return (
-            <div key={idx} style={{ color: "#FFFFFF", border: "1px solid #ccc", padding: "8px" }}>
-              <p><strong>Day {day}</strong></p>
-              {state.uploadedUrl ? (
-                <div>
-                  <p>Uploaded!</p>
-                  <video width={160} controls>
-                    <source src={state.uploadedUrl} type="video/mp4" />
-                    Your browser doesn’t support this tag.
-                  </video>
-                  <p>
-                    <a href={state.uploadedUrl} target="_blank" rel="noreferrer">Open video</a>
-                  </p>
-                  <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={uploadTargets[idx]?.youtube ?? true}
-                        onChange={handleUploadTargetChange(idx, 'youtube')}
-                      />
-                      Upload to YouTube
-                      <span style={{ marginLeft: '8px', color: uploadStatuses[idx]?.youtube.status === 'error' ? '#f87171' : '#a1a1aa' }}>
-                        {uploadStatuses[idx]?.youtube.status === 'loading' && 'Loading...'}
-                        {uploadStatuses[idx]?.youtube.status === 'success' && 'Success'}
-                        {uploadStatuses[idx]?.youtube.status === 'error' && `Error: ${uploadStatuses[idx]?.youtube.message ?? 'Failed'}`}
-                      </span>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={uploadTargets[idx]?.tiktok ?? true}
-                        onChange={handleUploadTargetChange(idx, 'tiktok')}
-                      />
-                      Upload to TikTok
-                      <span style={{ marginLeft: '8px', color: uploadStatuses[idx]?.tiktok.status === 'error' ? '#f87171' : '#a1a1aa' }}>
-                        {uploadStatuses[idx]?.tiktok.status === 'loading' && 'Loading...'}
-                        {uploadStatuses[idx]?.tiktok.status === 'success' && 'Success'}
-                        {uploadStatuses[idx]?.tiktok.status === 'error' && `Error: ${uploadStatuses[idx]?.tiktok.message ?? 'Failed'}`}
-                      </span>
-                    </label>
-                    {uploadTargets[idx]?.tiktok && (
-                      <div style={{ marginLeft: '24px', display: 'grid', gap: '6px', fontSize: '12px', borderLeft: '2px solid #333', paddingLeft: '8px' }}>
-                        <input
-                          type="text"
-                          placeholder="TikTok title (required)"
-                          value={tiktokSettings[idx]?.title ?? ''}
-                          onChange={(e) => updateTikTokSetting(idx, 'title', e.target.value)}
-                          maxLength={150}
-                          style={{ background: '#1a1a1a', color: '#fff', border: '1px solid #444', borderRadius: '4px', padding: '4px 6px', width: '100%' }}
-                        />
-                        <textarea
-                          placeholder="Description (optional)"
-                          value={tiktokSettings[idx]?.description ?? ''}
-                          onChange={(e) => updateTikTokSetting(idx, 'description', e.target.value)}
-                          maxLength={2200}
-                          rows={2}
-                          style={{ background: '#1a1a1a', color: '#fff', border: '1px solid #444', borderRadius: '4px', padding: '4px 6px', width: '100%', resize: 'vertical' }}
-                        />
-                        <select
-                          value={tiktokSettings[idx]?.privacyLevel ?? 'PUBLIC_TO_EVERYONE'}
-                          onChange={(e) => updateTikTokSetting(idx, 'privacyLevel', e.target.value as TikTokSettings['privacyLevel'])}
-                          style={{ background: '#1a1a1a', color: '#fff', border: '1px solid #444', borderRadius: '4px', padding: '4px 6px' }}
+      {/* Header */}
+      <div style={{ marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
+          {monthName} {year}
+        </h2>
+        <p style={{ fontSize: "0.78rem", color: "#52525b", margin: 0 }}>
+          Upload a video for each day, then post it to TikTok.
+        </p>
+        {creatorInfo && (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", padding: "8px 12px", background: "#111113", border: "1px solid #1f1f23", borderRadius: "10px", width: "fit-content" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={creatorInfo.creator_avatar_url} alt="" width={28} height={28} style={{ borderRadius: "50%" }} />
+            <span style={{ fontSize: "0.78rem", color: "#a1a1aa" }}>
+              Posting to <strong style={{ color: "#fff" }}>{creatorInfo.creator_nickname}</strong>
+              <span style={{ color: "#52525b" }}> @{creatorInfo.creator_username}</span>
+            </span>
+          </div>
+        )}
+        {creatorError && (
+          <p style={{ fontSize: "0.75rem", color: "#f87171", margin: "10px 0 0" }}>
+            TikTok: {creatorError}
+          </p>
+        )}
+      </div>
+
+      <div style={{ overflowX: "auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(160px, 1fr))", gap: "8px", minWidth: "1120px" }}>
+          {states.map((state, idx) => {
+            const day = idx + 1;
+            const hasVideo = !!state.uploadedUrl;
+            const ttStatus = uploadStatuses[idx]?.tiktok.status;
+
+            const statusBadge = hasVideo ? (
+              <span style={{
+                fontSize: "0.6rem",
+                fontWeight: 600,
+                letterSpacing: "0.04em",
+                padding: "2px 7px",
+                borderRadius: "20px",
+                background: ttStatus === 'success' ? '#14532d33' : ttStatus === 'error' ? '#7f1d1d33' : ttStatus === 'loading' ? '#17255133' : '#18181b',
+                color: ttStatus === 'success' ? '#4ade80' : ttStatus === 'error' ? '#f87171' : ttStatus === 'loading' ? '#93c5fd' : '#52525b',
+                border: `1px solid ${ttStatus === 'success' ? '#166534' : ttStatus === 'error' ? '#991b1b' : ttStatus === 'loading' ? '#1e3a8a' : '#27272a'}`,
+              }}>
+                {ttStatus === 'success' ? '✓ Posted' : ttStatus === 'loading' ? '↻ Posting' : ttStatus === 'error' ? '✕ Failed' : 'Ready'}
+              </span>
+            ) : null;
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  background: "#111113",
+                  border: "1px solid #1f1f23",
+                  borderRadius: "10px",
+                  padding: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                {/* Day header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#3f3f46", letterSpacing: "0.08em" }}>
+                    DAY {day}
+                  </span>
+                  {statusBadge}
+                </div>
+
+                {hasVideo ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {/* Video preview */}
+                    <video
+                      style={{ width: "100%", borderRadius: "6px", background: "#000", maxHeight: "90px", objectFit: "cover", display: "block" }}
+                      controls
+                      onLoadedMetadata={(e) => {
+                        const d = e.currentTarget.duration;
+                        setVideoDurations((prev) => ({ ...prev, [idx]: d }));
+                      }}
+                    >
+                      <source src={state.uploadedUrl} type="video/mp4" />
+                    </video>
+
+                    {/* TikTok settings */}
+                    <input
+                      type="text"
+                      placeholder="Title (required)"
+                      value={tiktokSettings[idx]?.title ?? ''}
+                      onChange={(e) => updateTikTokSetting(idx, 'title', e.target.value)}
+                      maxLength={150}
+                      style={fieldStyle}
+                    />
+                    <textarea
+                      placeholder="Description (optional)"
+                      value={tiktokSettings[idx]?.description ?? ''}
+                      onChange={(e) => updateTikTokSetting(idx, 'description', e.target.value)}
+                      maxLength={2200}
+                      rows={2}
+                      style={{ ...fieldStyle, resize: 'vertical' }}
+                    />
+                    <select
+                      value={tiktokSettings[idx]?.privacyLevel ?? ''}
+                      onChange={(e) => updateTikTokSetting(idx, 'privacyLevel', e.target.value as TikTokSettings['privacyLevel'])}
+                      style={{ ...fieldStyle, color: tiktokSettings[idx]?.privacyLevel ? fieldStyle.color : '#52525b' }}
+                    >
+                      <option value="" disabled>Who can view this video?</option>
+                      {(creatorInfo?.privacy_level_options ?? []).map((opt) => {
+                        const blocked = opt === 'SELF_ONLY' && tiktokSettings[idx]?.brandContentToggle;
+                        return (
+                          <option key={opt} value={opt} disabled={blocked}>
+                            {PRIVACY_LABELS[opt] ?? opt}{blocked ? ' (not allowed for branded content)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+
+                    {/* Interaction settings */}
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      {([
+                        ['allowComment', 'Comment', creatorInfo?.comment_disabled],
+                        ['allowDuet', 'Duet', creatorInfo?.duet_disabled],
+                        ['allowStitch', 'Stitch', creatorInfo?.stitch_disabled],
+                      ] as const).map(([key, label, disabledByCreator]) => (
+                        <label
+                          key={key}
+                          title={disabledByCreator ? `${label} is turned off in your TikTok settings` : undefined}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: disabledByCreator ? 'not-allowed' : 'pointer', opacity: disabledByCreator ? 0.4 : 1 }}
                         >
-                          <option value="PUBLIC_TO_EVERYONE">Public</option>
-                          <option value="FOLLOWER_OF_CREATOR">Followers only</option>
-                          <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
-                          <option value="SELF_ONLY">Private</option>
-                        </select>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ccc' }}>
                           <input
                             type="checkbox"
-                            checked={tiktokSettings[idx]?.discloseContent ?? false}
+                            checked={!disabledByCreator && (tiktokSettings[idx]?.[key] ?? false)}
+                            disabled={!!disabledByCreator}
+                            onChange={(e) => updateTikTokSetting(idx, key, e.target.checked)}
+                            style={{ accentColor: '#ee1d52' }}
+                          />
+                          <span style={{ fontSize: "0.68rem", color: "#71717a" }}>Allow {label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Disclose content */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={tiktokSettings[idx]?.discloseContent ?? false}
+                        onChange={(e) => {
+                          updateTikTokSetting(idx, 'discloseContent', e.target.checked);
+                          if (!e.target.checked) {
+                            updateTikTokSetting(idx, 'brandContentToggle', false);
+                            updateTikTokSetting(idx, 'brandOrganicToggle', false);
+                          }
+                        }}
+                        style={{ accentColor: '#ee1d52' }}
+                      />
+                      <span style={{ fontSize: "0.7rem", color: "#71717a" }}>Disclose video content</span>
+                    </label>
+                    {tiktokSettings[idx]?.discloseContent && (
+                      <div style={{ marginLeft: "10px", borderLeft: "2px solid #27272a", paddingLeft: "8px", display: "flex", flexDirection: "column", gap: "5px" }}>
+                        <p style={{ fontSize: "0.65rem", color: "#52525b", margin: "0 0 2px" }}>
+                          {tiktokSettings[idx]?.brandContentToggle
+                            ? 'Your video will be labeled "Paid partnership"'
+                            : tiktokSettings[idx]?.brandOrganicToggle
+                              ? 'Your video will be labeled "Promotional content"'
+                              : 'Turn on to disclose that this video promotes goods or services in exchange for something of value.'}
+                        </p>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={tiktokSettings[idx]?.brandOrganicToggle ?? false}
+                            onChange={(e) => updateTikTokSetting(idx, 'brandOrganicToggle', e.target.checked)}
+                            style={{ accentColor: '#ee1d52' }}
+                          />
+                          <span style={{ fontSize: "0.68rem", color: "#71717a" }}>Your Brand</span>
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={tiktokSettings[idx]?.brandContentToggle ?? false}
                             onChange={(e) => {
-                              updateTikTokSetting(idx, 'discloseContent', e.target.checked);
-                              if (!e.target.checked) {
-                                updateTikTokSetting(idx, 'brandContentToggle', false);
-                                updateTikTokSetting(idx, 'brandOrganicToggle', false);
+                              updateTikTokSetting(idx, 'brandContentToggle', e.target.checked);
+                              if (e.target.checked && tiktokSettings[idx]?.privacyLevel === 'SELF_ONLY') {
+                                updateTikTokSetting(idx, 'privacyLevel', '');
                               }
                             }}
+                            style={{ accentColor: '#ee1d52' }}
                           />
-                          Disclose video content
+                          <span style={{ fontSize: "0.68rem", color: "#71717a" }}>Branded Content</span>
                         </label>
-                        {tiktokSettings[idx]?.discloseContent && (
-                          <div style={{ marginLeft: '16px', display: 'grid', gap: '4px', color: '#aaa', fontSize: '11px' }}>
-                            <p style={{ margin: 0, color: '#888' }}>Your video will be labeled "Promotional content". You must disclose when it promotes yourself or a third party.</p>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <input
-                                type="checkbox"
-                                checked={tiktokSettings[idx]?.brandOrganicToggle ?? false}
-                                onChange={(e) => updateTikTokSetting(idx, 'brandOrganicToggle', e.target.checked)}
-                              />
-                              Your Brand (promoting yourself or your own business)
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <input
-                                type="checkbox"
-                                checked={tiktokSettings[idx]?.brandContentToggle ?? false}
-                                onChange={(e) => updateTikTokSetting(idx, 'brandContentToggle', e.target.checked)}
-                              />
-                              Branded Content (paid partnership / sponsored)
-                            </label>
-                          </div>
-                        )}
                       </div>
                     )}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={uploadTargets[idx]?.facebook ?? true}
-                        onChange={handleUploadTargetChange(idx, 'facebook')}
-                      />
-                      Upload to Facebook
-                      <span style={{ marginLeft: '8px', color: uploadStatuses[idx]?.facebook.status === 'error' ? '#f87171' : '#a1a1aa' }}>
-                        {uploadStatuses[idx]?.facebook.status === 'loading' && 'Loading...'}
-                        {uploadStatuses[idx]?.facebook.status === 'success' && 'Success'}
-                        {uploadStatuses[idx]?.facebook.status === 'error' && `Error: ${uploadStatuses[idx]?.facebook.message ?? 'Failed'}`}
-                      </span>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={uploadTargets[idx]?.instagram ?? true}
-                        onChange={handleUploadTargetChange(idx, 'instagram')}
-                      />
-                      Upload to Instagram
-                      <span style={{ marginLeft: '8px', color: uploadStatuses[idx]?.instagram.status === 'error' ? '#f87171' : '#a1a1aa' }}>
-                        {uploadStatuses[idx]?.instagram.status === 'loading' && 'Loading...'}
-                        {uploadStatuses[idx]?.instagram.status === 'success' && 'Success'}
-                        {uploadStatuses[idx]?.instagram.status === 'error' && `Error: ${uploadStatuses[idx]?.instagram.message ?? 'Failed'}`}
-                      </span>
-                    </label>
-                    {/* <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={uploadTargets[idx]?.twitter ?? true}
-                        onChange={handleUploadTargetChange(idx, 'twitter')}
-                      />
-                      Upload to Twitter
-                      <span style={{ marginLeft: '8px', color: uploadStatuses[idx]?.twitter.status === 'error' ? '#f87171' : '#a1a1aa' }}>
-                        {uploadStatuses[idx]?.twitter.status === 'loading' && 'Loading...'}
-                        {uploadStatuses[idx]?.twitter.status === 'success' && 'Success'}
-                        {uploadStatuses[idx]?.twitter.status === 'error' && `Error: ${uploadStatuses[idx]?.twitter.message ?? 'Failed'}`}
-                      </span>
-                    </label> */}
-                  </div>
-                  <div style={{ marginTop: '12px' }}>
-                    <button
-                      onClick={() => handleUploadSelectedPlatforms(idx)}
-                      disabled={
-                        (uploadTargets[idx]?.youtube && uploadingToYoutube) ||
-                        (uploadTargets[idx]?.tiktok && uploadingToTiktok) ||
-                        (uploadTargets[idx]?.facebook && uploadingToFacebook) ||
-                        (uploadTargets[idx]?.instagram && uploadingToInstagram) ||
-                        (uploadTargets[idx]?.twitter && uploadingToTwitter)
-                      }
+
+                    {/* Error message */}
+                    {ttStatus === 'error' && (
+                      <p style={{ fontSize: "0.68rem", color: "#f87171", margin: 0, lineHeight: 1.3 }}>
+                        {uploadStatuses[idx]?.tiktok.message ?? 'Upload failed'}
+                      </p>
+                    )}
+
+                    {tiktokNotice[idx] && ttStatus === 'success' && (
+                      <p style={{ fontSize: "0.68rem", color: "#4ade80", margin: 0, lineHeight: 1.3 }}>
+                        {tiktokNotice[idx]}
+                      </p>
+                    )}
+
+                    {/* Consent declaration */}
+                    <p style={{ fontSize: "0.62rem", color: "#52525b", margin: 0, lineHeight: 1.4 }}>
+                      By posting, you agree to TikTok&apos;s{' '}
+                      {tiktokSettings[idx]?.brandContentToggle && (
+                        <>
+                          <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noreferrer" style={{ color: "#a1a1aa" }}>Branded Content Policy</a>
+                          {' and '}
+                        </>
+                      )}
+                      <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noreferrer" style={{ color: "#a1a1aa" }}>Music Usage Confirmation</a>.
+                    </p>
+
+                    {/* Post button */}
+                    {(() => {
+                      const s = tiktokSettings[idx];
+                      const disclosureIncomplete = s?.discloseContent && !s.brandContentToggle && !s.brandOrganicToggle;
+                      const blocked = uploadingToTiktok || !creatorInfo || !s?.privacyLevel || !!disclosureIncomplete;
+                      const hint = !creatorInfo
+                        ? 'Connect TikTok to post'
+                        : !s?.privacyLevel
+                          ? 'Choose who can view this video'
+                          : disclosureIncomplete
+                            ? 'Select Your Brand or Branded Content'
+                            : null;
+                      return (
+                        <>
+                          <button
+                            onClick={() => handleUploadSelectedPlatforms(idx)}
+                            disabled={blocked}
+                            style={{
+                              background: blocked ? '#27272a' : '#ee1d52',
+                              color: blocked ? '#52525b' : '#fff',
+                              border: 'none',
+                              borderRadius: '7px',
+                              padding: '8px',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              cursor: blocked ? 'not-allowed' : 'pointer',
+                              width: '100%',
+                              letterSpacing: '0.01em',
+                            }}
+                          >
+                            {uploadingToTiktok ? 'Posting…' : 'Post to TikTok'}
+                          </button>
+                          {hint && !uploadingToTiktok && (
+                            <p style={{ fontSize: "0.62rem", color: "#71717a", margin: 0, textAlign: "center" }}>{hint}</p>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    <a
+                      href={state.uploadedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: "0.65rem", color: "#3f3f46", textAlign: "center", textDecoration: "none" }}
                     >
-                      Upload selected platforms
-                    </button>
+                      View source ↗
+                    </a>
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={handleFileChange(idx)}
-                    disabled={state.uploading}
-                  />
-                  <button onClick={handleUpload(idx)} disabled={state.uploading}>
-                    {state.uploading ? `Uploading…` : `Upload Day ${day}`}
-                  </button>
-                  {state.error && <p style={{ color: "red" }}>{state.error}</p>}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+                    {/* Upload drop zone */}
+                    <label
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: `1.5px dashed ${state.file ? '#3f3f46' : '#27272a'}`,
+                        borderRadius: "8px",
+                        padding: "18px 8px",
+                        cursor: "pointer",
+                        gap: "5px",
+                        background: state.file ? '#18181b' : 'transparent',
+                        transition: "border-color 0.15s, background 0.15s",
+                      }}
+                    >
+                      <span style={{ fontSize: "1.3rem", lineHeight: 1 }}>🎬</span>
+                      <span style={{ fontSize: "0.68rem", color: state.file ? '#a1a1aa' : '#3f3f46', textAlign: 'center', wordBreak: 'break-all' }}>
+                        {state.file
+                          ? (state.file.name.length > 22 ? state.file.name.slice(0, 20) + '…' : state.file.name)
+                          : 'Choose video'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleFileChange(idx)}
+                        disabled={state.uploading}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+
+                    {/* Save button */}
+                    <button
+                      onClick={handleUpload(idx)}
+                      disabled={state.uploading || !state.file}
+                      style={{
+                        background: state.file && !state.uploading ? '#27272a' : '#18181b',
+                        color: state.file && !state.uploading ? '#e4e4e7' : '#3f3f46',
+                        border: '1px solid #27272a',
+                        borderRadius: '7px',
+                        padding: '7px',
+                        fontSize: '0.73rem',
+                        fontWeight: 500,
+                        cursor: state.file && !state.uploading ? 'pointer' : 'not-allowed',
+                        width: '100%',
+                      }}
+                    >
+                      {state.uploading ? 'Saving…' : 'Save to storage'}
+                    </button>
+
+                    {state.error && (
+                      <p style={{ fontSize: "0.68rem", color: "#f87171", margin: 0, lineHeight: 1.3 }}>{state.error}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
